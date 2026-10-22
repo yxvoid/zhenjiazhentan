@@ -605,29 +605,33 @@ var ALL_IMAGES = [
   var bar = document.getElementById('loaderBar');
   var pctEl = document.getElementById('loaderPct');
   var total = ALL_IMAGES.length;
-  var loaded = 0, done = 0;
+  var loaded = 0;
+  var revealed = false;   // 是否已放行主界面
 
   function tick(){
     var pct = Math.round(loaded/total*100);
     if(bar){ bar.style.width = pct+'%'; }
     if(pctEl){ pctEl.textContent = pct + '%'; }
   }
-  function finish(){
-    if(done >= total) return;      // 只放行一次
-    done = total;
+  function reveal(){
+    if(revealed) return;           // 只放行一次
+    revealed = true;
     /* 全部就绪：淡出加载页，显示主界面 */
     if(loader){
       loader.classList.add('out');
       setTimeout(function(){ loader.style.display = 'none'; }, 400);
     }
   }
-  /* 超时兜底：5 秒后强制进入，避免个别图片卡死 */
-  setTimeout(finish, 5000);
+  function checkDone(){
+    if(loaded >= total) reveal();  // 所有图片都已完成（含失败）才放行
+  }
+  /* 安全兜底：30 秒后无条件放行，避免个别图片卡死导致永远进不去 */
+  setTimeout(reveal, 30000);
 
   ALL_IMAGES.forEach(function(u){
     var im = new Image();
-    im.onload  = function(){ loaded++; tick(); finish(); };
-    im.onerror = function(){ loaded++; tick(); finish(); if(window.console) console.warn('图片加载失败: '+u); };
+    im.onload  = function(){ loaded++; tick(); checkDone(); };
+    im.onerror = function(){ loaded++; tick(); checkDone(); if(window.console) console.warn('图片加载失败: '+u); };
     im.src = u;
   });
   tick();
