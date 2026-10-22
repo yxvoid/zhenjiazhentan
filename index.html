@@ -4,6 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>真假侦探 · 数字素养互动</title>
+<!-- 预加载全部图片：让浏览器尽早并行拉取，配合 JS 内的 blob 内存缓存 -->
+<link rel="preload" as="image" href="images/ai1.jpg">
+<link rel="preload" as="image" href="images/ai2.jpg">
+<link rel="preload" as="image" href="images/ai3.jpg">
+<link rel="preload" as="image" href="images/ai4.jpg">
+<link rel="preload" as="image" href="images/ai5.jpg">
+<link rel="preload" as="image" href="images/ai6.jpg">
+<link rel="preload" as="image" href="images/real.jpg">
+<link rel="preload" as="image" href="images/news_notice.jpg">
+<link rel="preload" as="image" href="images/news_press.png">
+<link rel="preload" as="image" href="images/1.jpg">
+<link rel="preload" as="image" href="images/2.jpg">
+<link rel="preload" as="image" href="images/3.jpg">
+<link rel="preload" as="image" href="images/friend_avatar.jpg">
+<link rel="preload" as="image" href="images/my_avatar.jpg">
 <style>
   :root{
     --bg:#eef1f8; --card:#ffffff; --ink:#1f2633; --sub:#6b7686;
@@ -365,7 +380,7 @@
         <div class="arr">›</div>
       </div>
       <div class="mcard green" onclick="enterNews()">
-        <div class="ico imgico"><img src="images/news_popup.png" alt="消息"></div>
+        <div class="ico imgico"><img src="images/news_press.png" alt="消息"></div>
         <div class="txt">
           <div class="t">消息真实性判别</div>
           <div class="d">读消息 → 判断「可信」还是「不可信」</div>
@@ -584,21 +599,31 @@
 
 <script>
 /* =========================================================
-   启动加载页：点击链接进入后，先把全部图片预加载完成，
-   再显示主界面（避免切换时闪图 / 延迟加载）。
-   若个别图片失败也会放行，并在控制台提示。
+   图片内存缓存（解决手机端 HTTP 缓存被清除的问题）
+   -----------------------------------------------------------------
+   手机浏览器会因内存压力随时清掉 HTTP 缓存（尤其是 iOS Safari），
+   导致即使「预加载」过、游玩时仍会重新联网慢慢加载。
+   因此这里把每张图用 fetch() 拉成 Blob 存进 JS 内存，
+   再用 URL.createObjectURL(blob) 生成 blob: 地址供 <img> 使用——
+   游玩全程不再访问网络，任何缓存清理都影响不到。
    ========================================================= */
 var ALL_IMAGES = [
   // 图片判别 7 张
   'images/ai1.jpg','images/ai2.jpg','images/ai3.jpg','images/ai4.jpg',
   'images/ai5.jpg','images/ai6.jpg','images/real.jpg',
   // 消息板块
-  'images/news_popup.png','images/news_notice.jpg','images/news_press.png',
+  'images/news_notice.jpg','images/news_press.png',
   // 微信对话
   'images/1.jpg','images/2.jpg','images/3.jpg',
   // 头像
   'images/friend_avatar.jpg','images/my_avatar.jpg'
 ];
+/* 原网络路径 -> blob 对象地址 的内存映射。全局暴露，供各处 <img> 使用 */
+var IMG_CACHE = {};
+/* 取图片的显示地址：已有 blob 则直接用，否则退回原路径（防止个别失败） */
+function imgUrl(src){
+  return IMG_CACHE[src] || src;
+}
 
 (function(){
   var loader = document.getElementById('loader');
@@ -621,21 +646,49 @@ var ALL_IMAGES = [
       loader.classList.add('out');
       setTimeout(function(){ loader.style.display = 'none'; }, 400);
     }
+    /* 把页面里写死的静态图片/头像也切成内存 blob，游玩全程不再走网络 */
+    bindStatic();
   }
   function checkDone(){
-    if(loaded >= total) reveal();  // 所有图片都已完成（含失败）才放行
+    if(loaded >= total) reveal();  // 所有图片都成功进入内存（含失败）才放行
   }
-  /* 安全兜底：30 秒后无条件放行，避免个别图片卡死导致永远进不去 */
-  setTimeout(reveal, 30000);
+  /* 安全兜底：40 秒后无条件放行，避免个别图片卡死导致永远进不去 */
+  setTimeout(reveal, 40000);
 
   ALL_IMAGES.forEach(function(u){
-    var im = new Image();
-    im.onload  = function(){ loaded++; tick(); checkDone(); };
-    im.onerror = function(){ loaded++; tick(); checkDone(); if(window.console) console.warn('图片加载失败: '+u); };
-    im.src = u;
+    /* 用 fetch 拉成 Blob，存进内存 -> 生成 blob: 地址 */
+    fetch(u).then(function(r){
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return r.blob();
+    }).then(function(blob){
+      IMG_CACHE[u] = URL.createObjectURL(blob);
+      loaded++; tick(); checkDone();
+    }).catch(function(err){
+      /* 失败：退回原路径正常显示，不让游戏卡住 */
+      if(window.console) console.warn('图片加载失败，将使用原路径: '+u, err);
+      loaded++; tick(); checkDone();
+    });
   });
   tick();
 })();
+
+/* 把所有静态 <img> 与 CSS 头像背景，替换成内存 blob 地址 */
+function bindStatic(){
+  /* 静态 <img> 标签 */
+  var imgs = document.querySelectorAll('img');
+  for(var i=0;i<imgs.length;i++){
+    var im = imgs[i];
+    var orig = im.getAttribute('src');
+    if(!orig) continue;
+    if(im.src === imgUrl(orig)) continue;      // 已是 blob，跳过（避免覆盖已设置的动态图）
+    if(IMG_CACHE[orig]){ im.setAttribute('src', IMG_CACHE[orig]); }
+  }
+  /* CSS 头像背景（微信对话框的 我与朋友头像） */
+  var friends = document.querySelectorAll('.wx-avatar.friend');
+  for(var j=0;j<friends.length;j++) friends[j].style.backgroundImage = 'url('+imgUrl('images/friend_avatar.jpg')+')';
+  var mines = document.querySelectorAll('.wx-avatar.mine');
+  for(var k=0;k<mines.length;k++) mines[k].style.backgroundImage = 'url('+imgUrl('images/my_avatar.jpg')+')';
+}
 
 /* =========================================================
    图片数据：src + 是否 AI 生成（isAI）
@@ -706,7 +759,7 @@ function renderImgQuestion(){
   document.getElementById('pCur').textContent = curIdx+1;
   document.getElementById('pTot').textContent = tot;
   document.getElementById('pBar').style.width = (curIdx/tot*100)+'%';
-  document.getElementById('pImg').src = item.src;
+  document.getElementById('pImg').src = imgUrl(item.src);
   document.getElementById('pNum').textContent = '图片 '+(curIdx+1);
   document.getElementById('pModeTag').textContent = imgMode===1 ? '模式一' : ('目前答对 '+score+' 题');
   // 重置判定标签与推进按钮
@@ -779,7 +832,7 @@ function showScore(){
       var item = IMGS[gi];
       var card = document.createElement('div');
       card.className='wrongcard';
-      card.innerHTML = '<img src="'+item.src+'"><div class="cap">这张其实：'+(item.isAI?'AI 生成':'真实照片')+'</div><div class="gohint">点击查看 ›</div>';
+      card.innerHTML = '<img src="'+imgUrl(item.src)+'"><div class="cap">这张其实：'+(item.isAI?'AI 生成':'真实照片')+'</div><div class="gohint">点击查看 ›</div>';
       card.addEventListener('click', function(){ openDetail(item); });
       grid.appendChild(card);
     });
@@ -789,7 +842,7 @@ function showScore(){
 
 /* 图片详情页（从模式二错图进入：仅显示正确答案 + 返回成绩） */
 function openDetail(item){
-  document.getElementById('dImg').src = item.src;
+  document.getElementById('dImg').src = imgUrl(item.src);
   document.getElementById('dNum').textContent = item.isAI?'AI 生成':'真实照片';
   document.getElementById('dVerdict').textContent = '正确答案：'+(item.isAI?'🤖 AI 生成':'📷 真实照片');
   document.getElementById('dModeTag').textContent = '模式二 · 查看错图';
@@ -834,7 +887,7 @@ function openWxChat(){
   go('wxPage');
 }
 function viewWxImg(el){
-  document.getElementById('wxViewerImg').src = el.src;
+  document.getElementById('wxViewerImg').src = el.src; // el.src 已是 blob 地址（见下方静态图替换）
   document.getElementById('wxViewer').style.display = 'flex';
 }
 function judgeWx2(choice){
