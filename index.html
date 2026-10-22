@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>真假侦探 · 数字素养互动</title>
+<style>
+  :root{
+    --bg:#eef1f8; --card:#ffffff; --ink:#1f2633; --sub:#6b7686;
+    --brand:#2743c4; --brand2:#5b6cf0; --good:#18a05e; --bad:#e5484d;
+    --amber:#c9a227; --line:#e6eaf2; --r:18px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0; font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    background:radial-gradient(1300px 800px at 18% 12%, #eaedfc 0%, #dbe3fa 45%, #ccd8f7 100%);
+    color:var(--ink); display:flex; align-items:center; justify-content:center;
+    overflow:hidden; user-select:none;
+  }
+  .phone{
+    position:relative; width:100vw; height:100vh; overflow:hidden;
+    background:linear-gradient(165deg,#eef2fb 0%,#e3eafb 55%,#dbe3fa 100%);
+    display:flex; flex-direction:column;
+  }
+  .phone::before{content:''; position:absolute; inset:0; pointer-events:none; z-index:0;
+    background:radial-gradient(640px 420px at 86% 6%, rgba(255,255,255,.55), transparent 60%),
+      radial-gradient(520px 360px at 6% 96%, rgba(91,108,240,.10), transparent 60%);}
+  /* ---- 顶部栏 ---- */
+  .topbar{
+    flex:0 0 auto; display:flex; align-items:center; justify-content:space-between;
+    padding:18px 28px; background:linear-gradient(135deg,var(--brand),var(--brand2));
+    color:#fff; z-index:30; box-shadow:0 4px 18px rgba(30,45,90,.20);
+  }
+  .topbar .tt{font-size:22px; font-weight:800; letter-spacing:2px;}
+  .homebtn{
+    width:54px; height:54px; border-radius:16px; background:rgba(255,255,255,.20);
+    border:none; color:#fff; font-size:24px; cursor:pointer; display:flex;
+    align-items:center; justify-content:center; transition:transform .08s ease,background .2s;
+  }
+  .homebtn:active{transform:scale(.93); background:rgba(255,255,255,.3);}
+  .homebtn.hidden{visibility:hidden; pointer-events:none;}
+
+  .screen{position:absolute; inset:0; display:none; flex-direction:column;
+    padding-top:92px; overflow-y:auto; -webkit-overflow-scrolling:touch; z-index:1;}
+  .screen.active{display:flex;}
+  .scrolly{padding:28px 44px 40px; flex:1;}
+
+  /* ---- 主界面 ---- */
+  .hero{padding:22px 22px 8px; text-align:center;}
+  .hero .badge{display:inline-block; background:rgba(39,67,196,.10); color:var(--brand);
+    font-size:12px; font-weight:700; padding:5px 12px; border-radius:999px; margin-bottom:10px;}
+  .hero h1{margin:0; font-size:30px; font-weight:900; letter-spacing:1px;}
+  .hero p{margin:8px 0 0; color:var(--sub); font-size:14px;}
+  .menu{padding:16px 18px 28px; display:grid; gap:16px;}
+  .mcard{
+    background:var(--card); border-radius:var(--r); padding:20px; display:flex; gap:16px;
+    align-items:center; box-shadow:0 8px 24px rgba(31,38,51,.06); cursor:pointer;
+    border:2px solid transparent; transition:transform .1s ease,border-color .2s;
+  }
+  .mcard:active{transform:scale(.98);}
+  .mcard.blue{border-color:#d8e0ff;}
+  .mcard.green{border-color:#d4f0e2;}
+  .mcard .ico{flex:0 0 54px; height:54px; border-radius:16px; display:flex; align-items:center;
+    justify-content:center; font-size:28px;}
+  .mcard.blue .ico{background:linear-gradient(135deg,var(--brand),var(--brand2));}
+  .mcard.green .ico{background:linear-gradient(135deg,#1aa067,#3fce8d);}
+  .mcard .t{font-size:18px; font-weight:800;}
+  .mcard .d{font-size:13px; color:var(--sub); margin-top:3px; line-height:1.5;}
+  .mcard .arr{margin-left:auto; color:#c3c9d6; font-size:22px;}
+
+  /* ---- 通用按钮 ---- */
+  .btn{appearance:none; border:none; border-radius:16px; padding:14px; font-size:16px;
+    font-weight:800; cursor:pointer; transition:transform .08s ease,opacity .2s;}
+  .btn:active{transform:scale(.97);}
+  .btn.primary{background:var(--brand); color:#fff; box-shadow:0 8px 18px rgba(39,67,196,.25);}
+  .btn.ghost{background:#eef1f8; color:var(--ink);}
+  .btn.good{background:var(--good); color:#fff;}
+  .btn.bad{background:var(--bad); color:#fff;}
+  .btn.block{width:100%;}
+  .row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+
+  /* ---- 模式选择 ---- */
+  .modecard{background:var(--card); border-radius:var(--r); padding:18px; box-shadow:0 8px 24px rgba(31,38,51,.05);
+    cursor:pointer; border:2px solid var(--line); margin-bottom:14px; transition:transform .1s ease;}
+  .modecard:active{transform:scale(.98);}
+  .modecard .mt{font-size:17px; font-weight:800; display:flex; align-items:center; gap:8px;}
+  .modecard .mt span{font-size:22px;}
+  .modecard .md{font-size:13px; color:var(--sub); margin-top:6px; line-height:1.6;}
+  .modecard .tag{display:inline-block; font-size:11px; font-weight:700; color:var(--brand);
+    background:rgba(39,67,196,.08); border-radius:999px; padding:3px 9px; margin-top:10px;}
+
+  /* ---- 图片题目区 ---- */
+  .qhead{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+  .qhead .count{font-size:13px; color:var(--sub);}
+  .qhead .count b{color:var(--brand); font-size:16px;}
+  .prog{height:8px; background:#e2e7f2; border-radius:999px; overflow:hidden; margin-bottom:16px;}
+  .prog i{display:block; height:100%; background:linear-gradient(90deg,var(--brand),var(--brand2));
+    border-radius:999px; transition:width .25s ease;}
+  .stage{
+    background:var(--card); border-radius:var(--r); overflow:hidden; box-shadow:0 8px 24px rgba(31,38,51,.05);
+  }
+  .stage .imgwrap{background:#000; position:relative;}
+  .stage img{display:block; width:100%; height:auto; max-height:58vh; object-fit:contain; margin:0 auto;}
+  /* 图片右上角：题号 + 判定结果 */
+  .stage .imgwrap .corner{position:absolute; top:10px; right:10px; display:flex;
+    flex-direction:column; gap:8px; align-items:flex-end;}
+  .stage .imgwrap .corner span{background:rgba(0,0,0,.55); color:#fff; font-size:11px;
+    padding:3px 9px; border-radius:999px; letter-spacing:.5px; position:static;}
+  .stage .imgwrap .corner .judge-tag{font-weight:900; font-size:22px; letter-spacing:2px; display:none;}
+  .stage .imgwrap .corner .judge-tag.good{background:var(--good) !important; padding:12px 24px !important; border-radius:999px !important; box-shadow:0 4px 16px rgba(0,0,0,.35);}
+  .stage .imgwrap .corner .judge-tag.bad{background:var(--bad) !important; padding:12px 24px !important; border-radius:999px !important; box-shadow:0 4px 16px rgba(0,0,0,.35);}
+  .stage .ask{padding:16px 16px 20px;}
+  .stage .ask h3{margin:0 0 14px; font-size:17px; font-weight:800; text-align:center;}
+  .askbtns{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .askbtns .btn{padding:13px; font-size:15px;}
+  .note{font-size:12px; color:var(--sub); text-align:center; margin-top:14px; line-height:1.6;}
+  .tip{margin-top:18px; padding:14px 16px; border-radius:14px; background:#fff8ec;
+    border:1px solid #f0e2bf; color:#7a6424; font-size:13px; line-height:1.8; text-align:left;}
+  .tip .ti{font-weight:800; margin-bottom:4px;}
+
+  /* ---- 模式一 完成页 / 模式二 成绩页 ---- */
+  .finish{padding:22px; text-align:center;}
+  .finish .emo{font-size:60px;}
+  .finish .ft{font-size:20px; font-weight:900; margin-top:8px;}
+  .finish .fd{font-size:14px; color:var(--sub); margin:10px 0 22px; line-height:1.7;}
+  .scorewrap{background:var(--card); border-radius:var(--r); padding:26px 22px; text-align:center;
+    box-shadow:0 8px 24px rgba(31,38,51,.06);}
+  .scorewrap .cir{width:118px; height:118px; margin:6px auto 6px; border-radius:50%;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:conic-gradient(var(--brand) var(--pct,0%), #e4e9f4 0); position:relative;}
+  .scorewrap .cir::before{content:""; position:absolute; inset:11px; background:#fff; border-radius:50%;}
+  .scorewrap .cir .num{position:relative; font-size:34px; font-weight:900; color:var(--brand);}
+  .scorewrap .cir .num small{font-size:15px; color:var(--sub); font-weight:700;}
+  .scorewrap .cir .lbl{position:relative; font-size:12px; color:var(--sub);}
+  .like{margin:12px 0 4px; font-size:26px;}
+  .scorewrap .verdictline{font-size:16px; font-weight:800;}
+  .scorewrap .rate{font-size:13px; color:var(--sub); margin-top:6px;}
+  .scorewrap .btn{margin:16px 0 4px;}
+  .wronglist{margin-top:18px;}
+  .wronglist .wl-title{font-size:14px; font-weight:800; margin-bottom:10px; display:flex; align-items:center; gap:6px;}
+  .wronggrid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+  .wrongcard{background:var(--card); border-radius:14px; overflow:hidden; cursor:pointer;
+    border:2px solid #ffe2e3; box-shadow:0 4px 12px rgba(229,72,77,.10); transition:transform .1s ease;}
+  .wrongcard:active{transform:scale(.97);}
+  .wrongcard img{display:block; width:100%; height:92px; object-fit:cover; background:#000;}
+  .wrongcard .cap{font-size:11px; color:var(--bad); text-align:center; padding:6px 4px; font-weight:700;}
+  .wrongcard .gohint{font-size:10px; color:#aab2c3; text-align:center; padding:0 4px 7px;}
+  .nostat{text-align:center; color:var(--good); font-weight:800; font-size:15px; padding:22px 0 6px;}
+  .viewline{text-align:center; font-size:13px; color:var(--sub); margin-top:16px; line-height:1.7;}
+
+  /* ---- 新闻真实性 ---- */
+  .news-head{display:flex; align-items:center; justify-content:center; gap:8px; font-size:14px;
+    font-weight:800; color:var(--brand); margin:2px 0 14px;}
+  .article{background:#fff; border-radius:var(--r); overflow:hidden; box-shadow:0 8px 24px rgba(31,38,51,.05);}
+  .article .meta{display:flex; justify-content:space-between; padding:14px 16px 10px; font-size:12px; color:#94a0b4;
+    border-bottom:1px solid #eef0f4;}
+  .article .meta b{color:var(--ink);}
+  .article .a-title{font-size:19px; font-weight:900; line-height:1.45; padding:12px 16px 4px; letter-spacing:.3px;}
+  .article .a-sub{font-size:13px; color:#77839a; padding:0 16px 12px; line-height:1.6;}
+  .article .a-body{padding:4px 16px 18px; font-size:14.5px; line-height:1.85; color:#2c3340; text-align:justify;}
+  .article .a-body strong{color:#15202b;}
+  .article .a-section{font-size:15px; font-weight:800; color:#15202b; margin:16px 0 6px;}
+  .article .quoteblock{border-left:3px solid var(--bad); background:#faf2f2; padding:10px 14px;
+    border-radius:0 10px 10px 0; margin:12px 0; font-size:13.5px; color:#5c4a4e; line-height:1.8;}
+  .article .end{margin-top:14px; padding-top:10px; border-top:1px dashed #e2e6ec; font-size:11.5px;
+    color:#a8b0bf; text-align:center;}
+  .judge-box{padding:16px 18px 24px;}
+  .judge-box h4{margin:0 0 12px; font-size:16px; font-weight:800; text-align:center;}
+  .hinttop{text-align:center; font-size:12px; color:var(--sub); margin-top:6px;}
+
+  /* 找证据 */
+  .evbox{display:none; padding:18px; background:#f7f9ff; border-top:1px solid #e6eaf2;}
+  .evbox.open{display:block;}
+  .evbox .q{font-size:15px; font-weight:800; margin-bottom:12px; text-align:center; line-height:1.6;}
+  .chips{display:flex; flex-direction:column; gap:10px;}
+  .chip{border:2px solid #dbe2f5; border-radius:14px; padding:12px 14px; font-size:13.5px; line-height:1.6;
+    cursor:pointer; background:#fff; transition:all .12s ease;}
+  .chip.sel{border-color:var(--brand); background:#edf0ff;}
+  .chip.hit{border-color:var(--good); background:#e9f9f1;}
+  .chip.miss{border-color:var(--bad); background:#fdeeed;}
+  .chip .mark{display:inline-block; width:20px; text-align:center; font-weight:900;}
+  .evfoot{margin-top:14px;}
+  .fadein{animation:pop .25s ease;}
+  @keyframes pop{from{transform:translateY(14px) scale(.96); opacity:0}to{transform:none;opacity:1}}
+  /* ---- 新闻板块（复刻 注意力争夺4-虚假新闻弹窗） ---- */
+  .mcard .ico.imgico{overflow:hidden; padding:0;}
+  .mcard .ico.imgico img{width:100%; height:100%; object-fit:cover; display:block;}
+  .news-page{background:#fff; border-radius:var(--r); overflow:hidden; box-shadow:0 8px 24px rgba(31,38,51,.05);
+    font-family:"PingFang SC","Microsoft YaHei",sans-serif; color:#2c3340; line-height:1.75; font-size:16px;}
+  /* 消息文章页：不收缩、保持完整高度，允许整页上下滚动 */
+  #scr-newsPage .news-page{flex:0 0 auto;}
+  .fn-meta{display:flex; justify-content:space-between; align-items:center; padding:14px 18px 10px;
+    border-bottom:1px solid #eceef2; font-size:13px; color:#8a94a6;}
+  .fn-meta .fn-reporter{font-weight:700; color:#2c3340;}
+  .fn-title{font-size:22px; font-weight:800; color:#15202b; line-height:1.4; margin:14px 18px 6px; letter-spacing:.5px;}
+  .fn-sub{font-size:14px; color:#6b7686; margin:0 18px 14px;}
+  .fn-notice{display:block; width:100%; margin:6px 0 10px; border-radius:8px; padding:0 12px;}
+  .fn-body{margin:12px 18px; text-align:justify; color:#2c3340; font-size:16px;}
+  .fn-body strong{color:#15202b;}
+  .fn-section{font-size:17px; font-weight:700; color:#15202b; margin:18px 18px 2px;}
+  .fn-press{display:block; width:100%; border-radius:8px; margin:8px 0 0; padding:0 12px;}
+  .fn-caption{font-size:13px; color:#97a0b0; line-height:1.5; margin:6px 12px 14px;}
+  .fn-quote{border-left:3px solid #c9a227; background:#faf8f1; padding:10px 14px;
+    border-radius:0 8px 8px 0; margin:14px 18px; color:#5c5650; font-size:15px;}
+  .fn-end{margin-top:22px; padding-top:12px; border-top:1px dashed #e2e6ec; font-size:12px;
+    color:#a8b0bf; text-align:center; margin:0 18px 10px;}
+  .fn-choose{margin-top:0; padding:18px; border-top:1px solid #eef0f4; text-align:center; animation:pop .4s ease;}
+  .fn-choose .fn-q{font-size:18px; font-weight:800; color:#15202b; margin-bottom:18px;}
+  .fn-btns{display:flex; gap:14px; justify-content:center;}
+  .fn-btn{appearance:none; border:none; border-radius:999px; padding:12px 40px; font-size:16px;
+    font-weight:700; cursor:pointer; transition:transform .08s ease,opacity .2s;}
+  .fn-btn:active{transform:scale(.96);}
+  .fn-btn.believe{background:#eef1f5; color:#6b7686;}
+  .fn-btn.doubt{background:var(--bad); color:#fff;}
+  .evidZone{margin-top:0; padding:20px 18px 28px; border-top:1px solid #eef0f4; text-align:center;}
+  .evidZone .eq{font-size:16px; font-weight:800; margin-bottom:20px; text-align:center; line-height:1.7; color:#15202b;}
+  .evidZone .btn{margin:0;}
+
+  /* ================= 16:9 横屏美化 ================= */
+  .hero{padding:44px 40px 12px;}
+  .hero .badge{font-size:16px; padding:8px 18px; margin-bottom:18px; letter-spacing:1px;}
+  .hero h1{font-size:60px; letter-spacing:4px; color:var(--brand); text-shadow:0 6px 20px rgba(39,67,196,.16);}
+  .hero p{font-size:20px; margin-top:14px; color:#46516a;}
+  .menu{padding:30px 7% 34px; display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:stretch;}
+  .mcard{padding:38px 34px; gap:28px; border-radius:26px;}
+  .mcard .ico{flex:0 0 118px; height:118px; border-radius:28px; font-size:60px;}
+  .mcard .t{font-size:36px;}
+  .mcard .d{font-size:19px; margin-top:12px; line-height:1.65;}
+  .mcard .arr{font-size:42px;}
+  .modecard{padding:28px 30px; border-radius:22px;}
+  .modecard .mt{font-size:26px;}
+  .modecard .md{font-size:18px;}
+  .modecard .tag{font-size:13px; padding:5px 12px; margin-top:14px;}
+  .qhead .count{font-size:17px;}
+  .qhead .count b{font-size:24px;}
+  .prog{margin-bottom:22px;}
+  .stage{border-radius:26px;}
+  .stage .imgwrap img{max-height:60vh;}
+  .stage .ask h3{font-size:23px;}
+  .askbtns .btn{padding:20px; font-size:21px;}
+  .askbtns{max-width:620px; margin:0 auto;}
+  .btn{padding:18px; font-size:19px; border-radius:18px;}
+  .note{font-size:16px; color:#566078;}
+  .tip{font-size:16px; padding:18px 22px; margin-top:22px;}
+  .finish .emo{font-size:80px;}
+  .finish .ft{font-size:32px;}
+  .finish .fd{font-size:19px;}
+  .scorewrap{border-radius:26px;}
+  .scorewrap .cir{width:176px; height:176px;}
+  .scorewrap .cir .num{font-size:54px;}
+  .scorewrap .verdictline{font-size:24px;}
+  .scorewrap .rate{font-size:17px;}
+  .wrongimg .cap{font-size:13px;}
+  /* 新闻文章页：居中固定最大宽度，方便阅读 */
+  #scr-newsPage{justify-content:flex-start;}
+  .news-page{max-width:600px; margin:0 auto;}
+  #scr-newsPage .news-page{flex:0 0 auto; max-width:600px; margin:0 auto;}
+  .fn-title{font-size:27px;}
+  .fn-body{font-size:18px;}
+  .fn-section{font-size:20px;}
+  .fn-choose .fn-q{font-size:21px;}
+  .wronggrid{grid-template-columns:repeat(4, minmax(0,1fr));}
+  .wrongcard img{height:120px;}
+  .wrongcard .cap{font-size:13px;}
+
+
+
+
+  /* 自适应：较窄时两个入口卡上下排列，避免被挤出屏幕 */
+  @media (max-width:760px){
+    .menu{grid-template-columns:1fr;}
+  }
+
+  /* ================= 消息二 · 模拟微信对话界面（手机窄容器） ================= */
+  #scr-wxPage{justify-content:flex-start; align-items:center; overflow:hidden;
+    background:radial-gradient(900px 620px at 72% 8%,#dde2f3,#c7cee7 70%,#bac2e1);}
+  .wx-phone{width:100%; max-width:520px; margin:0 auto; height:calc(100vh - 104px);
+    background:#ededed; box-shadow:0 18px 46px rgba(25,35,70,.35);
+    display:flex; flex-direction:column; overflow:hidden; border-radius:20px;}
+  .wx-nav{flex:0 0 auto; display:flex; align-items:center; gap:6px;
+    padding:14px 12px 12px; background:#f3f3f4; border-bottom:1px solid #dcdcdf;}
+  .wx-nav .wx-back{font-size:26px; cursor:pointer; color:#111; width:32px; text-align:left; line-height:1;}
+  .wx-nav .wx-title{flex:1; text-align:center;}
+  .wx-nav .wx-title b{font-size:17px; color:#111; letter-spacing:1px;}
+  .wx-nav .wx-more{font-size:17px; color:#111; width:32px; text-align:right; letter-spacing:1px;}
+  .wx-body{flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:16px 14px 20px;}
+  .wx-toolbar{flex:0 0 auto; display:flex; align-items:center; gap:12px;
+    padding:9px 12px; background:#f6f6f6; border-top:1px solid #e2e2e4;}
+  .wx-toolbar .tb-input{flex:1; height:36px; line-height:36px; border-radius:6px;
+    background:#fff; border:1px solid #dcdcdf; color:#b6b6ba; font-size:13px; padding:0 12px;}
+  .wx-time{text-align:center; font-size:12px; color:#a6a6a6; margin:0 0 16px;}
+  .wx-row{display:flex; align-items:flex-start; margin-bottom:16px;}
+  .wx-row.me{justify-content:flex-end;}
+  .wx-avatar{width:42px; height:42px; flex:0 0 42px; border-radius:8px;
+    background-size:cover; background-position:center;}
+  .wx-avatar.friend{background:#9aa3c0 url('images/friend_avatar.jpg') center/cover no-repeat;}
+  .wx-avatar.mine{background:#8fc58a url('images/my_avatar.jpg') center/cover no-repeat;}
+  .wx-row .bubble{max-width:72%; padding:11px 14px; border-radius:12px;
+    font-size:15px; line-height:1.6; word-break:break-word;}
+  .wx-row.from .bubble{background:#fff; color:#222; border-top-left-radius:2px; margin-left:10px;}
+  .wx-row.me .bubble{background:#95ec69; color:#111; border-top-right-radius:2px; margin-right:10px;}
+  .wx-single{width:58%; max-width:210px; margin-left:10px; border-radius:8px;
+    object-fit:cover; cursor:pointer; background:#ddd; display:block;}
+  .wx-ask{margin-top:14px; padding:18px 16px; border-radius:16px; background:#f2f3f7; text-align:center;}
+  .wx-ask .eq{font-size:16px; font-weight:800; margin-bottom:16px; line-height:1.7;}
+  .wx-result{margin-top:14px; padding:18px 18px 22px; border-radius:16px;
+    background:#fff; text-align:left; box-shadow:0 4px 14px rgba(0,0,0,.06);}
+  .wx-result .eq{font-size:16px; font-weight:800; text-align:center; line-height:1.7; margin-bottom:12px;}
+  .wx-result p{font-size:14px; line-height:1.8; margin:8px 0; color:#333;}
+  .wx-result .btn{margin-top:14px;}
+  /* 微信点图看大图：全屏黑色查看器 */
+  .wx-viewer{position:fixed; inset:0; z-index:99; background:rgba(0,0,0,.95);
+    display:none; align-items:center; justify-content:center; cursor:pointer;}
+  .wx-viewer img{max-width:94vw; max-height:92vh;}
+
+  /* ================= 启动加载页 ================= */
+  #loader{position:fixed; inset:0; z-index:200; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:20px;
+    background:linear-gradient(165deg,#2743c4 0%,#5b6cf0 120%);
+    transition:opacity .4s ease; color:#fff;}
+  #loader.out{opacity:0; pointer-events:none;}
+  #loader .l-logo{font-size:40px;}
+  #loader .l-title{font-size:22px; font-weight:900; letter-spacing:3px;}
+  #loader .l-sub{font-size:13px; opacity:.75; letter-spacing:1px;}
+  #loader .l-track{width:min(280px,70vw); height:10px; background:rgba(255,255,255,.22);
+    border-radius:999px; overflow:hidden;}
+  #loader .l-bar{height:100%; width:0; background:#fff; border-radius:999px;
+    transition:width .2s ease;}
+  #loader .l-pct{font-size:16px; font-weight:800;}
+
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+
+  <!-- 启动加载页：图片全部加载完成前覆盖整个界面 -->
+  <div id="loader">
+    <div class="l-logo">🕵️</div>
+    <div class="l-title">真假侦探大挑战</div>
+    <div class="l-sub">正在加载图片，请稍候…</div>
+    <div class="l-track"><div class="l-bar" id="loaderBar"></div></div>
+    <div class="l-pct" id="loaderPct">0%</div>
+  </div>
+
+  <div class="topbar">
+    <div class="tt" id="topTitle">🕵️ 真假侦探</div>
+    <button class="homebtn" id="homeBtn" title="回到主界面">🏠</button>
+  </div>
+
+  <!-- ===== 主界面 ===== -->
+  <section class="screen active" id="scr-home">
+    <div class="hero">
+      <span class="badge"></span>
+      <h1>真假侦探大挑战</h1>
+      <p>AI 生成的内容越来越逼真。是真是假，不急着相信——<br>先判断，再找证据！</p>
+    </div>
+    <div class="menu">
+      <div class="mcard blue" onclick="startImgMenu()">
+        <div class="ico">🖼️</div>
+        <div class="txt">
+          <div class="t">图片判别</div>
+          <div class="d">判断图片是「AI 生成」还是「真实照片」</div>
+        </div>
+        <div class="arr">›</div>
+      </div>
+      <div class="mcard green" onclick="enterNews()">
+        <div class="ico imgico"><img src="images/news_popup.png" alt="消息"></div>
+        <div class="txt">
+          <div class="t">消息真实性判别</div>
+          <div class="d">读消息 → 判断「可信」还是「不可信」</div>
+        </div>
+        <div class="arr">›</div>
+      </div>
+  </section>
+
+  <!-- ===== 图片判别·选择玩法 ===== -->
+  <section class="screen" id="scr-imgMenu">
+    <div class="scrolly">
+      <div class="modecard" onclick="startImg(1)">
+        <div class="mt"><span></span>模式一 · 逐题判定</div>
+        <div class="md">看一张图片，点击后图片右上角<strong>立即呈现「判定正确 / 判定错误」</strong>。</div>
+        <span class="tag">一题一判 · 立即反馈</span>
+      </div>
+      <div class="modecard" onclick="startImg(2)">
+        <div class="mt"><span></span>模式二 · 闯关计分</div>
+        <div class="md">一次性判别全部图片，最后按正确率<strong>计算总分</strong>，并为你<strong>标出答错的图片</strong>。</div>
+        <span class="tag">全部判断 · 按正确率计分</span>
+      </div>
+  </section>
+
+  <!-- ===== 图片判别 · 题目页（模式一&二共用） ===== -->
+  <section class="screen" id="scr-imgPlay">
+    <div class="scrolly">
+      <div class="qhead">
+        <div class="count">第 <b id="pCur">1</b> / <span id="pTot">7</span> 题</div>
+        <div id="pModeTag" class="count"></div>
+      </div>
+      <div class="prog"><i id="pBar" style="width:0"></i></div>
+      <div class="stage">
+        <div class="imgwrap">
+          <img id="pImg" alt="待判图片">
+          <div class="corner">
+            <span id="pNum">图片 1</span>
+            <span id="pJudge" class="judge-tag"></span>
+          </div>
+        </div>
+        <div class="ask">
+          <h3>这张图片是 AI 生成的，还是真实照片？</h3>
+          <div class="askbtns" id="pAskBtns">
+            <button class="btn primary" id="btnAI">AI 生成</button>
+            <button class="btn ghost" id="btnReal">真实照片</button>
+          </div>
+          <button class="btn primary block" id="pNext" style="display:none"></button>
+        </div>
+      </div>
+      <p class="note">/p>
+    </div>
+  </section>
+
+  <!-- ===== 模式一 · 完成页 ===== -->
+  <section class="screen" id="scr-imgFinish1">
+    <div class="scrolly">
+      <div class="finish fadein">
+        <div class="emo"></div>
+        <div class="ft">7 张图片判定完成！</div>
+        <div class="fd"><br><strong></strong>。</div>
+        <div class="tip"><div class="ti">💡 温馨提示</div>现在 AI 图片造假水平越来越高，演示图片存在瑕疵，易被发现生成痕迹。网络图片若无法判别真假，可到<strong>国家反诈中心 App</strong> 的「AI 内容鉴定」界面进行检测。</div>
+        <button class="btn primary block" onclick="startImgMenu()">返回玩法选择</button>
+        <div style="height:12px"></div>
+        <button class="btn ghost block" onclick="goHome()">回到主界面</button>
+      </div>
+  </section>
+
+  <!-- ===== 模式二 · 成绩页 ===== -->
+  <section class="screen" id="scr-imgScore">
+    <div class="scrolly">
+      <div class="scorewrap fadein">
+        <div class="cir" id="scoreCir"><div class="num" id="scoreNum">0<small>/7</small></div><div class="lbl">得分</div></div>
+        <div class="like" id="scoreLike"></div>
+        <div class="verdictline" id="scoreVerdict"></div>
+        <div class="rate" id="scoreRate"></div>
+      </div>
+
+      <div class="tip"><div class="ti">💡 温馨提示</div>现在 AI 图片造假水平越来越高，演示图片存在瑕疵，易被发现生成痕迹。网络图片若无法判别真假，可到<strong>国家反诈中心 App</strong> 的「AI 内容鉴定」界面进行检测。</div>
+
+      <div class="wronglist" id="wrongListWrap" style="display:none">
+        <div class="wl-title">答错的图片 —— 点击查看</div>
+        <div class="wronggrid" id="wrongGrid"></div>
+      </div>
+      <div class="nostat" id="allRightTip" style="display:none">全部答对，没有看错任何一张。</div>
+      <div class="viewline" id="viewLine" style="display:none">点击上方答错的图片，可查看图片详情</div>
+    </div>
+  </section>
+
+  <!-- ===== 图片详情页（模式二点错图进入） ===== -->
+  <section class="screen" id="scr-imgDetail">
+    <div class="scrolly">
+      <div class="qhead"><div class="count">图片详情</div><div class="count" id="dModeTag"></div></div>
+      <div class="stage">
+        <div class="imgwrap">
+          <img id="dImg" alt="">
+          <div class="corner"><span id="dNum"></span></div>
+        </div>
+        <div class="ask">
+          <h3 id="dVerdict"></h3>
+        </div>
+      </div>
+      <div style="margin-top:16px">
+        <button class="btn primary block" id="dBackBtn">← 返回成绩</button>
+      </div>
+  </section>
+
+  <!-- ===== 消息真假性判别 · 消息选择页 ===== -->
+  <section class="screen" id="scr-newsMenu">
+    <div class="scrolly">
+      <div class="modecard" onclick="goNewsPage()">
+        <div class="mt"><span>📢</span>消息一 · 小学生课间休息或将延长</div>
+        <div class="md">网传“全国小学生课间休息时间将统一延长到15分钟”，多地先行试点。</div>
+        <span class="tag">读消息 → 判断是否可信</span>
+      </div>
+      <div class="modecard" onclick="openWxChat()">
+        <div class="mt"><span>💬</span>消息二 · 小学生用AI黑进韩国7家银行</div>
+        <div class="md">朋友在微信里发来劲爆消息，还附上了截图。你会相信并转发吗？</div>
+        <span class="tag">微信对话 → 判断后再转发</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 消息真假性判别 · 纯谣言文章页 ===== -->
+  <section class="screen" id="scr-newsPage">
+    <div class="news-page">
+        <div class="fn-meta"><span class="fn-reporter">教育快讯</span><span>2026年10月19日 21:12</span></div>
+        <h1 class="fn-title">重磅！最新通知：全国小学生课间休息时间或将延长到15分钟</h1>
+        <div class="fn-sub">多地已先行试点，家长群热议：课间时间能不能全国统一延长？</div>
+        <img class="fn-notice" src="images/news_notice.jpg" alt="重磅通知">
+        <p class="fn-body">继“把课间还给孩子”引发全民热议后，记者多方了解到，全国小学生课间休息时间或将迎来大调整。据多名教育系统内部人士透露，一份关于“优化中小学课间管理”的指导性文件正在研究制定中，拟将小学课间休息时间由目前的10分钟统一延长至15分钟，消息一出，家长群、教师群迅速刷屏。</p>
+        <p class="fn-body">事实上，课间时间太短的问题并非刚刚被注意到。去年以来，教育部多次强调要保障学生课间休息和体育活动时间，并对“课间圈养”现象进行点名。北京、海南、福建等地已先后开展试点，将部分学校课间从10分钟延长到15分钟，体育课、大课间活动占比也有所提升。此番“或将全国推广”的说法，正是建立在此前各地试点的传闻之上。</p>
+        <div class="fn-section">一、多地“已先行”</div>
+        <p class="fn-body">据记者不完全梳理，目前山东济南、河南郑州已有城区学校在新学期悄悄执行“新作息表”：上午下午各两节15分钟课间，并新增“自由活动铃”。有家长晒出的新版课程表显示，课间由原先的“10分钟”一栏，改成了印着“课间活动15分钟”。某省会城市还传出消息，将把课间延长与教师考勤、值日轮岗挂钩，确保“不拖堂、不挤占”。</p>
+        <div class="fn-section">二、如何推进</div>
+        <p class="fn-body">多位消息人士称，若文件如期落地，或将采取“分批推进”方式：先在一二线城市主城区推行，再逐步覆盖县镇学校，预计最快明年春季学期起，部分地区将率先实施。有学校已提前为每个班级划定了“课间活动区”，并采购了一批跳绳、毽子和地面游戏贴纸。至于是否同步调整放学时间、作业量，“目前还没有确切说法，以正式文件为准”。</p>
+        <img class="fn-press" src="images/news_press.png" alt="课间活动">
+        <p class="fn-caption">▲ 发言人谈到保障学生课间休息活动时间</p>
+        <div class="fn-quote">“课间从10分钟延长到15分钟，表面看只是5分钟之差，但对缓解学生久坐疲劳、保护视力、提高下一节课专注度都有正向作用。关键不在于多这5分钟，而在于能不能真正把时间还给孩子。”——教育学者林教授（化名）</div>
+        <p class="fn-body">消息在网上迅速发酵。有家长表示“早就该这样了，孩子每天回来都说没时间上厕所”，也有家长担忧“课间长了会不会更拖沓、孩子更容易分心”。而大多数小学生则在班级群里欢呼雀跃，有网友调侃“这才是真正的减负从课间做起”。目前，各地教育部门暂未对网传说法作出正式回应，记者将持续关注。</p>
+
+        <div class="fn-choose" id="judgeZone">
+          <p class="fn-q">这条“课间休息延长到15分钟”的消息，你相信并愿意转发吗？</p>
+          <div class="fn-btns">
+            <button class="fn-btn believe" id="nBelieve">可信</button>
+            <button class="fn-btn doubt" id="nDoubt">不可信</button>
+          </div>
+        </div>
+        <div class="evidZone" id="evidZone" style="display:none"></div>
+      </div>
+  </section>
+
+  <!-- ===== 消息二 · 模拟微信对话界面 ===== -->
+  <section class="screen" id="scr-wxPage">
+    <div class="wx-phone">
+      <div class="wx-nav">
+        <span class="wx-back" onclick="go('newsMenu')">‹</span>
+        <div class="wx-title"><b>朋友</b></div>
+        <span class="wx-more">···</span>
+      </div>
+
+      <div class="wx-body">
+        <div class="wx-time">10月20日 14:32</div>
+
+        <div class="wx-row from">
+          <div class="wx-avatar friend"></div>
+          <div class="bubble">你听说了吗？</div>
+        </div>
+        <div class="wx-row from">
+          <div class="wx-avatar friend"></div>
+          <div class="bubble">广东有个小学生用ai把韩国七家银行打穿了</div>
+        </div>
+        <div class="wx-row from">
+          <div class="wx-avatar friend"></div>
+          <div class="bubble">窃取了大量个人信息，快看图</div>
+        </div>
+        <div class="wx-row from">
+          <div class="wx-avatar friend"></div>
+          <img class="wx-single" src="images/1.jpg" alt="微信图片" onclick="viewWxImg(this)">
+        </div>
+        <div class="wx-row from">
+          <div class="wx-avatar friend"></div>
+          <img class="wx-single" src="images/2.jpg" alt="微信图片" onclick="viewWxImg(this)">
+        </div>
+        <div class="wx-row from">
+          <div class="wx-avatar friend"></div>
+          <img class="wx-single" src="images/3.jpg" alt="微信图片" onclick="viewWxImg(this)">
+        </div>
+        <div class="wx-row me">
+          <div class="bubble">666</div>
+          <div class="wx-avatar mine"></div>
+        </div>
+
+        <div class="wx-ask" id="wxAsk">
+          <p class="eq">请问：这条消息你愿意相信并转发吗？</p>
+          <div class="fn-btns">
+            <button class="fn-btn believe" onclick="judgeWx2('believe')">可信</button>
+            <button class="fn-btn doubt" onclick="judgeWx2('doubt')">不可信</button>
+          </div>
+        </div>
+        <div class="wx-result" id="wxResult" style="display:none"></div>
+      </div>
+
+      <div class="wx-toolbar">
+        <span style="font-size:20px">🎙️</span>
+        <div class="tb-input">发消息…</div>
+        <span style="font-size:18px">➕</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 微信点图看大图：全屏查看器 -->
+  <div class="wx-viewer" id="wxViewer" onclick="this.style.display='none'">
+    <img id="wxViewerImg" alt="大图">
+  </div>
+
+</div><!-- /phone -->
+
+<script>
+/* =========================================================
+   启动加载页：点击链接进入后，先把全部图片预加载完成，
+   再显示主界面（避免切换时闪图 / 延迟加载）。
+   若个别图片失败也会放行，并在控制台提示。
+   ========================================================= */
+var ALL_IMAGES = [
+  // 图片判别 7 张
+  'images/ai1.jpg','images/ai2.jpg','images/ai3.jpg','images/ai4.jpg',
+  'images/ai5.jpg','images/ai6.jpg','images/real.jpg',
+  // 消息板块
+  'images/news_popup.png','images/news_notice.jpg','images/news_press.png',
+  // 微信对话
+  'images/1.jpg','images/2.jpg','images/3.jpg',
+  // 头像
+  'images/friend_avatar.jpg','images/my_avatar.jpg'
+];
+
+(function(){
+  var loader = document.getElementById('loader');
+  var bar = document.getElementById('loaderBar');
+  var pctEl = document.getElementById('loaderPct');
+  var total = ALL_IMAGES.length;
+  var loaded = 0, done = 0;
+
+  function tick(){
+    var pct = Math.round(loaded/total*100);
+    if(bar){ bar.style.width = pct+'%'; }
+    if(pctEl){ pctEl.textContent = pct + '%'; }
+  }
+  function finish(){
+    if(done >= total) return;      // 只放行一次
+    done = total;
+    /* 全部就绪：淡出加载页，显示主界面 */
+    if(loader){
+      loader.classList.add('out');
+      setTimeout(function(){ loader.style.display = 'none'; }, 400);
+    }
+  }
+  /* 超时兜底：5 秒后强制进入，避免个别图片卡死 */
+  setTimeout(finish, 5000);
+
+  ALL_IMAGES.forEach(function(u){
+    var im = new Image();
+    im.onload  = function(){ loaded++; tick(); finish(); };
+    im.onerror = function(){ loaded++; tick(); finish(); if(window.console) console.warn('图片加载失败: '+u); };
+    im.src = u;
+  });
+  tick();
+})();
+
+/* =========================================================
+   图片数据：src + 是否 AI 生成（isAI）
+   全部图片中只有 images/real.jpg 是真实照片，其余为 AI 生成
+   ========================================================= */
+var IMGS = [
+  { src:'images/ai1.jpg',   isAI:true },
+  { src:'images/ai2.jpg',   isAI:true },
+  { src:'images/real.jpg',  isAI:false },
+  { src:'images/ai3.jpg',   isAI:true },
+  { src:'images/ai4.jpg',   isAI:true },
+  { src:'images/ai5.jpg',   isAI:true },
+  { src:'images/ai6.jpg',   isAI:true }
+];
+
+/* 显示顺序：打乱，让“真实照片”不固定在最后 */
+var PLAY_ORDER = [0,1,4,5,2,6,3];
+// 下标 0,1,4,5,6,3 为 AI，下标 2 为真实
+
+/* =========================================================
+   状态
+   ========================================================= */
+var curIdx = 0;        // 图片题当前位置
+var imgMode = 1;       // 1 = 逐题判定；2 = 闯关计分
+var score = 0;         // 正确数
+var wrongIdx = [];     // 答错的下标
+var answered = [];     // 每个下标是否已答
+var newsIdx = 0;   // 新闻（仅一则，恒为0）
+var selEvi = [];       // 找证据已选项
+
+var screens = {};
+document.querySelectorAll('.screen').forEach(function(s){ screens[s.id]=s; });
+
+function go(id){
+  Object.keys(screens).forEach(function(k){ screens[k].classList.remove('active'); });
+  var s = screens['scr-'+id];
+  if(s){ s.classList.add('active'); s.scrollTop=0; }
+  updateTopbar(id);
+}
+function updateTopbar(id){
+  var homeOnly = (id==='home');
+  document.getElementById('homeBtn').classList.toggle('hidden', homeOnly);
+  var titles = {
+    home:'真假侦探', imgMenu:'图片判别 · 选择玩法', imgPlay:(imgMode===1?'模式一 · 逐题判定':'模式二 · 闯关计分'),
+    imgFinish1:'判定完成', imgScore:'闯关成绩', imgDetail:'图片详情',
+    newsMenu:'消息真假性判别', newsPage:'消息真假性判别', wxPage:'微信对话'
+  };
+  document.getElementById('topTitle').textContent = titles[id]||'真假侦探';
+}
+function goHome(){ go('home'); }
+document.getElementById('homeBtn').addEventListener('click', goHome);
+
+/* =========================================================
+   图片判别
+   ========================================================= */
+function startImgMenu(){ go('imgMenu'); }
+function startImg(mode){
+  imgMode = mode;
+  curIdx = 0; score = 0; wrongIdx = []; answered = [];
+  for(var k in PLAY_ORDER) answered.push(false);
+  go('imgPlay');
+  renderImgQuestion();
+}
+function renderImgQuestion(){
+  var gi = PLAY_ORDER[curIdx];
+  var item = IMGS[gi];
+  var tot = IMGS.length;
+  document.getElementById('pCur').textContent = curIdx+1;
+  document.getElementById('pTot').textContent = tot;
+  document.getElementById('pBar').style.width = (curIdx/tot*100)+'%';
+  document.getElementById('pImg').src = item.src;
+  document.getElementById('pNum').textContent = '图片 '+(curIdx+1);
+  document.getElementById('pModeTag').textContent = imgMode===1 ? '模式一' : ('目前答对 '+score+' 题');
+  // 重置判定标签与推进按钮
+  document.getElementById('pJudge').style.display = 'none';
+  document.getElementById('pAskBtns').style.display = 'grid';
+  document.getElementById('pNext').style.display = 'none';
+}
+document.getElementById('btnAI').addEventListener('click', function(){ answerImg(true); });
+document.getElementById('btnReal').addEventListener('click', function(){ answerImg(false); });
+document.getElementById('pNext').addEventListener('click', function(){
+  if(curIdx < PLAY_ORDER.length-1){ curIdx++; renderImgQuestion(); }
+  else { go('imgFinish1'); }
+});
+
+function answerImg(pickedAI){
+  var gi = PLAY_ORDER[curIdx];
+  var item = IMGS[gi];
+  var correct = (pickedAI === item.isAI);
+  if(answered[curIdx]===false){
+    answered[curIdx]=true;
+    if(correct) score++;
+    else wrongIdx.push(curIdx);
+  }
+  if(imgMode===1){
+    // 不弹窗：只在图片右上角呈现判定结果，并出现“下一张”
+    var j = document.getElementById('pJudge');
+    j.textContent = correct ? '判定正确' : '判定错误';
+    j.className = 'judge-tag ' + (correct?'good':'bad');
+    j.style.display = 'inline-block';
+    document.getElementById('pAskBtns').style.display = 'none';
+    var next = document.getElementById('pNext');
+    next.textContent = (curIdx===PLAY_ORDER.length-1) ? '完成判定 ✓' : '下一张 →';
+    next.style.display = 'block';
+  } else {
+    // 闯关计分：直接下一题，最后结算
+    if(curIdx < PLAY_ORDER.length-1){ curIdx++; renderImgQuestion(); }
+    else { showScore(); }
+  }
+}
+
+/* 模式二 · 结算 */
+function showScore(){
+  var tot = IMGS.length;
+  var pct = Math.round(score/tot*100);
+  document.getElementById('scoreCir').style.setProperty('--pct', pct+'%');
+  document.getElementById('scoreNum').innerHTML = score + '<small>/'+tot+'</small>';
+  document.getElementById('scoreRate').textContent = '正确率 '+pct+'% · 共 '+tot+' 题';
+
+  var verdict, like;
+  if(pct===100){ verdict='火眼金睛！全部答对 🎉'; like='🌟'; }
+  else if(pct>=70){ verdict='不错！你已经能识破大部分 AI 图片'; like='💪'; }
+  else if(pct>=40){ verdict='有一点感觉了，再多练练核查也能进步'; like='🤔'; }
+  else { verdict='AI 的迷惑性很强，学习“找证据”更重要'; like='🧐'; }
+  document.getElementById('scoreVerdict').textContent = verdict;
+  document.getElementById('scoreLike').textContent = like;
+
+  var wrap = document.getElementById('wrongListWrap');
+  var grid = document.getElementById('wrongGrid');
+  grid.innerHTML='';
+  if(wrongIdx.length===0){
+    wrap.style.display='none';
+    document.getElementById('allRightTip').style.display='block';
+    document.getElementById('viewLine').style.display='none';
+  }else{
+    wrap.style.display='block';
+    document.getElementById('allRightTip').style.display='none';
+    document.getElementById('viewLine').style.display='block';
+    wrongIdx.forEach(function(wi){
+      var gi = PLAY_ORDER[wi];
+      var item = IMGS[gi];
+      var card = document.createElement('div');
+      card.className='wrongcard';
+      card.innerHTML = '<img src="'+item.src+'"><div class="cap">这张其实：'+(item.isAI?'AI 生成':'真实照片')+'</div><div class="gohint">点击查看 ›</div>';
+      card.addEventListener('click', function(){ openDetail(item); });
+      grid.appendChild(card);
+    });
+  }
+  go('imgScore');
+}
+
+/* 图片详情页（从模式二错图进入：仅显示正确答案 + 返回成绩） */
+function openDetail(item){
+  document.getElementById('dImg').src = item.src;
+  document.getElementById('dNum').textContent = item.isAI?'AI 生成':'真实照片';
+  document.getElementById('dVerdict').textContent = '正确答案：'+(item.isAI?'🤖 AI 生成':'📷 真实照片');
+  document.getElementById('dModeTag').textContent = '模式二 · 查看错图';
+  document.getElementById('dBackBtn').textContent = '← 返回成绩';
+  document.getElementById('dBackBtn').onclick = function(){ go('imgScore'); };
+  go('imgDetail');
+}
+
+/* =========================================================
+   新闻真假性判别（一则）
+   ========================================================= */
+function enterNews(){
+  go('newsMenu');
+}
+function goNewsPage(){
+  selEvi = [];
+  document.getElementById('judgeZone').style.display = 'block';
+  document.getElementById('evidZone').style.display = 'none';
+  document.getElementById('evidZone').innerHTML = '';
+  go('newsPage');
+}
+document.getElementById('nBelieve').addEventListener('click', function(){ judgeNews(true); });
+document.getElementById('nDoubt').addEventListener('click', function(){ judgeNews(false); });
+
+function judgeNews(pickedReal){
+  var correct = (pickedReal === false); // 该条消息为虚假
+  var verdict = (correct?'✅ 判断正确！':'❌ 判断错了，再核实一下')
+    + ' —— 这条消息是「虚假」的，请勿轻信转发。';
+  document.getElementById('judgeZone').style.display = 'none';
+  var zone = document.getElementById('evidZone');
+  zone.style.display = 'block';
+  zone.innerHTML = '<div class="eq fadein">'+verdict+'</div>'+
+    '<button class="btn primary block" onclick="goHome()">🔙 返回主界面</button>';
+  selEvi = [];
+}
+
+/* 消息二 · 模拟微信对话 */
+function openWxChat(){
+  document.getElementById('wxAsk').style.display = 'block';
+  document.getElementById('wxResult').style.display = 'none';
+  document.getElementById('wxResult').innerHTML = '';
+  go('wxPage');
+}
+function viewWxImg(el){
+  document.getElementById('wxViewerImg').src = el.src;
+  document.getElementById('wxViewer').style.display = 'flex';
+}
+function judgeWx2(choice){
+  document.getElementById('wxAsk').style.display = 'none';
+  var result = document.getElementById('wxResult');
+  var html;
+  if(choice==='believe'){
+    html = '<div class="eq fadein">⚠️ 别急着转发——这条消息有真有假。</div>'+
+      '<p>这件事确实有真实的部分：<strong>韩国多家银行/金融机构确实遭遇了黑客攻击</strong>，相关事件是真的。</p>'+
+      '<p>但“一个小学生用 AI 把 7 家银行打穿、窃取大量个人信息”的说法是错误的，第一张截图使用ai修改了，<strong>黑客的具体身份信息官方至今没有公布</strong>。未经证实的耸动说法直接转发，很容易放大谣言，建议先到官方渠道核实再决定。</p>'+
+      '<p>更重要的是：用 AI 从事网络攻击、窃取信息是<strong>错误且违法</strong>的行为，任何时候都不应该这么做。</p>'+
+      '<button class="btn primary block" onclick="goHome()">🔙 返回主界面</button>';
+  } else {
+    html = '<div class="eq fadein">✅ 好眼光——你能对来源不明、过于耸动的说法保持警惕。</div>'+
+      '<p>真相是：<strong>韩国 7 家银行遭遇黑客攻击确实真实发生过</strong>；不过并非一个小学生用AI所为，<strong>具体身份信息，官方至今没有公布</strong>，所以这类说法仍要打上问号。</p>'+
+      '<p>而且无论事件是否属实，用 AI 去攻击、窃取信息都是<strong>错误且违法</strong>的，不应效仿。</p>'+
+      '<button class="btn primary block" onclick="goHome()">🔙 返回主界面</button>';
+  }
+  result.innerHTML = html;
+  result.style.display = 'block';
+}
+</script>
+</body>
+</html>
