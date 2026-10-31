@@ -109,6 +109,12 @@
   .qhead{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
   .qhead .count{font-size:13px; color:var(--sub);}
   .qhead .count b{color:var(--brand); font-size:16px;}
+  .qback{display:flex; align-items:center; gap:10px;}
+  .qback-btn{appearance:none; border:1px solid #e2e6ec; background:#fff; color:var(--sub);
+    width:26px; height:26px; border-radius:50%; font-size:16px; line-height:1; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; font-weight:700; padding:0;}
+  .qback-btn:active{transform:scale(.92);}
+  .qback-btn:disabled{opacity:.35; cursor:not-allowed;}
   .prog{height:8px; background:#e2e7f2; border-radius:999px; overflow:hidden; margin-bottom:16px;}
   .prog i{display:block; height:100%; background:linear-gradient(90deg,var(--brand),var(--brand2));
     border-radius:999px; transition:width .25s ease;}
@@ -231,6 +237,20 @@
   .evidZone{margin-top:0; padding:20px 18px 28px; border-top:1px solid #eef0f4; text-align:center;}
   .evidZone .eq{font-size:16px; font-weight:800; margin-bottom:20px; text-align:center; line-height:1.7; color:#15202b;}
   .evidZone .btn{margin:0;}
+
+  /* ===== 核查模式：红线标注 ===== */
+  .chk-tip{font-size:14px; color:#c0392b; font-weight:700; margin:6px 18px 4px;}
+  .chk-item{cursor:pointer; transition:background .2s;}
+  .chk-item:hover{background:rgba(192,57,43,.06);}
+  /* 文案：下面画红线 */
+  .chk-item.revealed{text-decoration:underline; text-decoration-color:#c0392b; text-decoration-thickness:2.5px; text-underline-offset:4px;}
+  /* 图片：红圈圈起来 */
+  .chk-item.revealed-img{box-shadow:0 0 0 4px #c0392b; outline:3px solid #c0392b; outline-offset:3px; border-radius:12px;}
+  .chk-anno{color:#c0392b; font-size:14px; font-weight:700; line-height:1.6; margin:4px 18px 10px; padding-left:12px;
+    border-left:3px solid #c0392b; background:rgba(192,57,43,.06); border-radius:0 6px 6px 0; animation:pop .35s ease;}
+  .chk-anno::before{content:"⚠ 疑点："; white-space:pre;}
+  .wx-markable{cursor:pointer;}
+  .wx-markable:hover{filter:brightness(.92);}
 
   /* ================= 16:9 横屏美化 ================= */
   .hero{padding:44px 40px 12px;}
@@ -423,7 +443,10 @@
     <div class="scrolly">
       <div class="qhead">
         <div class="count">第 <b id="pCur">1</b> / <span id="pTot">7</span> 题</div>
-        <div id="pModeTag" class="count"></div>
+        <div class="qback">
+          <button class="qback-btn" id="pBack" onclick="backImgQ()" title="返回上一题">‹</button>
+          <div id="pModeTag" class="count"></div>
+        </div>
       </div>
       <div class="prog"><i id="pBar" style="width:0"></i></div>
       <div class="stage">
@@ -520,25 +543,25 @@
   <section class="screen" id="scr-newsPage">
     <div class="news-page">
         <div class="fn-meta"><span class="fn-reporter">教育快讯</span><span>2026年10月19日 21:12</span></div>
-        <h1 class="fn-title">重磅！最新通知：全国小学生课间休息时间或将延长到15分钟</h1>
+        <h1 class="fn-title" id="fnTitle">重磅！最新通知：全国小学生课间休息时间将延长到15分钟</h1>
         <div class="fn-sub">多地已先行试点，家长群热议：课间时间能不能全国统一延长？</div>
         <img class="fn-notice" src="images/news_notice.jpg" alt="重磅通知">
         <p class="fn-body">继“把课间还给孩子”引发全民热议后，记者多方了解到，全国小学生课间休息时间或将迎来大调整。据多名教育系统内部人士透露，一份关于“优化中小学课间管理”的指导性文件正在研究制定中，拟将小学课间休息时间由目前的10分钟统一延长至15分钟，消息一出，家长群、教师群迅速刷屏。</p>
-        <p class="fn-body">事实上，课间时间太短的问题并非刚刚被注意到。去年以来，教育部多次强调要保障学生课间休息和体育活动时间，并对“课间圈养”现象进行点名。北京、海南、福建等地已先后开展试点，将部分学校课间从10分钟延长到15分钟，体育课、大课间活动占比也有所提升。此番“或将全国推广”的说法，正是建立在此前各地试点的传闻之上。</p>
+        <p class="fn-body">事实上，课间时间太短的问题并非刚刚被注意到。去年以来，教育部多次强调要保障学生课间休息和体育活动时间。</p>
         <div class="fn-section">一、多地“已先行”</div>
-        <p class="fn-body">据记者不完全梳理，目前山东济南、河南郑州已有城区学校在新学期悄悄执行“新作息表”：上午下午各两节15分钟课间，并新增“自由活动铃”。有家长晒出的新版课程表显示，课间由原先的“10分钟”一栏，改成了印着“课间活动15分钟”。某省会城市还传出消息，将把课间延长与教师考勤、值日轮岗挂钩，确保“不拖堂、不挤占”。</p>
+        <p class="fn-body" id="p529">据记者不完全梳理，目前山东济南、河南郑州已有城区学校在新学期悄悄执行“新作息表”：上午下午各两节15分钟课间，并新增“自由活动铃”。有家长晒出的新版课程表显示，课间由原先的“10分钟”一栏，改成了印着“课间活动15分钟”。某省会城市还传出消息，将把课间延长与教师考勤、值日轮岗挂钩，确保“不拖堂、不挤占”。</p>
         <div class="fn-section">二、如何推进</div>
-        <p class="fn-body">多位消息人士称，若文件如期落地，或将采取“分批推进”方式：先在一二线城市主城区推行，再逐步覆盖县镇学校，预计最快明年春季学期起，部分地区将率先实施。有学校已提前为每个班级划定了“课间活动区”，并采购了一批跳绳、毽子和地面游戏贴纸。至于是否同步调整放学时间、作业量，“目前还没有确切说法，以正式文件为准”。</p>
-        <img class="fn-press" src="images/news_press.png" alt="课间活动">
+        <p class="fn-body" id="p531">多位消息人士称，文件如期落地后，将采取“分批推进”方式：先在一二线城市主城区推行，再逐步覆盖县镇学校，预计最快明年春季学期起，覆盖大部分区域。有学校已提前为每个班级划定了“课间活动区”，并采购了一批跳绳、毽子和地面游戏贴纸。至于是否同步调整放学时间、作业量，目前还没有确切说法。</p>
+        <img class="fn-press" id="fnPressImg" src="images/news_press.png" alt="课间活动">
         <p class="fn-caption">▲ 发言人谈到保障学生课间休息活动时间</p>
-        <div class="fn-quote">“课间从10分钟延长到15分钟，表面看只是5分钟之差，但对缓解学生久坐疲劳、保护视力、提高下一节课专注度都有正向作用。关键不在于多这5分钟，而在于能不能真正把时间还给孩子。”——教育学者林教授（化名）</div>
-        <p class="fn-body">消息在网上迅速发酵。有家长表示“早就该这样了，孩子每天回来都说没时间上厕所”，也有家长担忧“课间长了会不会更拖沓、孩子更容易分心”。而大多数小学生则在班级群里欢呼雀跃，有网友调侃“这才是真正的减负从课间做起”。目前，各地教育部门暂未对网传说法作出正式回应，记者将持续关注。</p>
+        <div class="fn-quote" id="fnQuote">“课间从10分钟延长到15分钟，表面看只是5分钟之差，但对缓解学生久坐疲劳、保护视力、提高下一节课专注度都有正向作用。关键不在于多这5分钟，而在于能不能真正把时间还给孩子。”——教育学者林教授（化名）</div>
+        <p class="fn-body">消息在网上迅速发酵。有家长表示“早就该这样了，孩子每天回来都说没时间上厕所”，也有家长担忧“课间长了会不会更拖沓、孩子更容易分心”。而大多数小学生则在班级群里欢呼雀跃，有网友调侃“这才是真正的减负从课间做起”。</p>
 
         <div class="fn-choose" id="judgeZone">
-          <p class="fn-q">这条“课间休息延长到15分钟”的消息，你相信并愿意转发吗？</p>
+          <p class="fn-q">这条“全国小学生课间休息将延长到15分钟”的消息，你相信并愿意转发吗？</p>
           <div class="fn-btns">
-            <button class="fn-btn believe" id="nBelieve">可信</button>
-            <button class="fn-btn doubt" id="nDoubt">不可信</button>
+            <button class="fn-btn believe" id="nBelieve">转发</button>
+            <button class="fn-btn doubt" id="nDoubt">不转发</button>
           </div>
         </div>
         <div class="evidZone" id="evidZone" style="display:none"></div>
@@ -571,15 +594,15 @@
         </div>
         <div class="wx-row from">
           <div class="wx-avatar friend"></div>
-          <img class="wx-single" src="images/1.jpg" alt="微信图片" onclick="viewWxImg(this)">
+          <img class="wx-single" id="wxImg1" src="images/1.jpg" alt="微信图片" onclick="viewWxImg(this)">
         </div>
         <div class="wx-row from">
           <div class="wx-avatar friend"></div>
-          <img class="wx-single" src="images/2.jpg" alt="微信图片" onclick="viewWxImg(this)">
+          <img class="wx-single" id="wxImg2" src="images/2.jpg" alt="微信图片" onclick="viewWxImg(this)">
         </div>
         <div class="wx-row from">
           <div class="wx-avatar friend"></div>
-          <img class="wx-single" src="images/3.jpg" alt="微信图片" onclick="viewWxImg(this)">
+          <img class="wx-single" id="wxImg3" src="images/3.jpg" alt="微信图片" onclick="viewWxImg(this)">
         </div>
         <div class="wx-row me">
           <div class="bubble">666</div>
@@ -794,7 +817,8 @@ function renderImgQuestion(){
   document.getElementById('pBar').style.width = (curIdx/tot*100)+'%';
   document.getElementById('pImg').src = imgUrl(item.src);
   document.getElementById('pNum').textContent = '图片 '+(curIdx+1);
-  document.getElementById('pModeTag').textContent = imgMode===1 ? '模式一' : ('目前答对 '+score+' 题');
+  document.getElementById('pModeTag').textContent = (imgMode===1 ? '模式一 · 逐题判定' : '模式二 · 闯关计分');
+  document.getElementById('pBack').disabled = (curIdx===0); // 第一题不能返回
   // 重置判定标签与推进按钮
   document.getElementById('pJudge').style.display = 'none';
   document.getElementById('pAskBtns').style.display = 'grid';
@@ -802,6 +826,11 @@ function renderImgQuestion(){
 }
 document.getElementById('btnAI').addEventListener('click', function(){ answerImg(true); });
 document.getElementById('btnReal').addEventListener('click', function(){ answerImg(false); });
+
+/* 返回上一题（小箭头） */
+function backImgQ(){
+  if(curIdx > 0){ curIdx--; renderImgQuestion(); }
+}
 document.getElementById('pNext').addEventListener('click', function(){
   if(curIdx < PLAY_ORDER.length-1){ curIdx++; renderImgQuestion(); }
   else { go('imgFinish1'); }
@@ -892,6 +921,8 @@ function enterNews(){
 }
 function goNewsPage(){
   selEvi = [];
+  NEWS_FINISHED = false;
+  resetMarks();
   document.getElementById('judgeZone').style.display = 'block';
   document.getElementById('evidZone').style.display = 'none';
   document.getElementById('evidZone').innerHTML = '';
@@ -908,12 +939,104 @@ function judgeNews(pickedReal){
   var zone = document.getElementById('evidZone');
   zone.style.display = 'block';
   zone.innerHTML = '<div class="eq fadein">'+verdict+'</div>'+
-    '<button class="btn primary block" onclick="goHome()">🔙 返回主界面</button>';
+    '<p style="font-size:14px;color:#6b7686;margin:0 0 12px;line-height:1.6;">现在进入核查模式：'+
+    '<b style="color:#c0392b;"></p>'+
+    '<div class="chk-tip"></div>'+
+    '<button class="btn primary block" onclick="revealAllMark()">点击此处，查看最终结论</button>'+
+    '<div class="btn secondary block" style="margin-top:10px;background:#eef1f5;color:#6b7686;" onclick="goHome()">🔙 返回主界面</div>';
   selEvi = [];
+  enableMark();
 }
+
+/* 开启核查模式：给有疑点的元素挂上点击 */
+function enableMark(){
+  var spots = markData();
+  spots.forEach(function(s){
+    var el = document.getElementById(s.id);
+    if(!el) return;
+    el.classList.add('_mark');
+    if(!el.getAttribute('data-marked')){
+      el.setAttribute('data-marked','1');
+      el.addEventListener('click', function(){ revealMark(s.id); });
+    }
+    el.setAttribute('data-done','0');
+  });
+}
+
+/* 清除上次留下的红线 / 红圈 / 提示条，供重玩 */
+function resetMarks(){
+  var spots = markData();
+  spots.forEach(function(s){
+    var el = document.getElementById(s.id);
+    if(!el) return;
+    el.classList.remove('revealed','revealed-img','_mark');
+    el.removeAttribute('data-done');
+    var anno = document.getElementById(s.id+'_anno'); if(anno) anno.remove();
+  });
+  var fin = document.getElementById('fnFinal'); if(fin) fin.remove();
+}
+
+/* 每条疑点的标注内容 */
+function markData(){
+  return [
+    {id:'fnTitle', order:1, anno:'重磅通知（诱导性标题，吸引人点击，需要保持警惕）'},
+    {id:'p531',    order:2, anno:'具体执行细节，均无官方文件支撑，属于自媒体自行脑补的内容'},
+    {id:'p529',    order:3, anno:'自媒体“脑补”与考勤值日挂钩等细节，无官方文件或可靠信源可查'},
+    {id:'fnPressImg', order:4, img:true, anno:'▲ 配图误导：图片是无主题的通用素材，与消息无直接关联'},
+    {id:'fnQuote', order:5, anno:'“教育学者”为化名、身份无从查证，属典型“包装式”可信度暗示'}
+  ];
+}
+
+/* 单点击某处 → 画红线/红圈 + 红色提示 */
+function revealMark(id){
+  var meta = markData().find(function(m){ return m.id === id; });
+  var el = document.getElementById(id);
+  if(!meta || !el || el.getAttribute('data-done')==='1') return;
+  el.setAttribute('data-done','1');
+  el.classList.add(meta.img ? 'revealed-img' : 'revealed');
+  var anno = document.createElement('div');
+  anno.className = 'chk-anno';
+  anno.id = id+'_anno';
+  anno.textContent = meta.anno;
+  el.insertAdjacentElement('afterend', anno);
+  tryCheckAllMarked();
+}
+
+/* 统计已核查数量，全部完成后自动弹出最终结论 */
+function tryCheckAllMarked(){
+  var metas = markData(); var done = 0;
+  metas.forEach(function(m){ var el=document.getElementById(m.id); if(el && el.getAttribute('data-done')==='1') done++; });
+  document.querySelector('.chk-tip')&&(document.querySelector('.chk-tip').textContent='✅ 已核查 '+done+' / '+metas.length+' 处');
+  if(done >= metas.length){ showFinalNews(); }
+}
+
+/* 最终结论 */
+var NEWS_FINISHED = false;
+function showFinalNews(){
+  if(NEWS_FINISHED) return; NEWS_FINISHED = true;
+  var zone = document.getElementById('evidZone');
+  var fin = document.createElement('div');
+  fin.className = 'eq fadein';
+  fin.id = 'fnFinal';
+  fin.style.fontSize='15px'; fin.style.lineHeight='1.8'; fin.style.textAlign='left';
+  fin.style.padding='16px 18px'; fin.style.background='#faf8f1'; fin.style.borderLeft='4px solid #c9a227'; fin.style.borderRadius='0 8px 8px 0';
+  fin.innerHTML =
+    '<b style="color:#15202b;">最终核查结论</b><br>'+
+    '该新闻属于典型的 <b style="color:#c0392b;">“诱导标题 + 真假参半 + 细节脑补”</b> 的自媒体内容，'+
+    '核心内容符合政策趋势，但细节多为臆测、表述刻意博眼球，属于不严谨的网传消息，'+
+    '不能当作“官方正式通知”来相信和传播。相关政策的准确信息，请以教育部、当地教育局的官方发布为准。';
+  zone.insertBefore(fin, zone.firstChild);
+}
+function revealAllMark(){
+  markData().forEach(function(m){
+    var el=document.getElementById(m.id); if(el) revealMark(m.id);
+  });
+}
+
 
 /* 消息二 · 模拟微信对话 */
 function openWxChat(){
+  resetWxMarks();
   document.getElementById('wxAsk').style.display = 'block';
   document.getElementById('wxResult').style.display = 'none';
   document.getElementById('wxResult').innerHTML = '';
@@ -926,22 +1049,93 @@ function viewWxImg(el){
 function judgeWx2(choice){
   document.getElementById('wxAsk').style.display = 'none';
   var result = document.getElementById('wxResult');
-  var html;
-  if(choice==='believe'){
-    html = '<div class="eq fadein">⚠️ 别急着转发——这条消息有真有假。</div>'+
-      '<p>这件事确实有真实的部分：<strong>韩国多家银行/金融机构确实遭遇了黑客攻击</strong>，相关事件是真的。</p>'+
-      '<p>但“一个小学生用 AI 把 7 家银行打穿、窃取大量个人信息”的说法是错误的，第一张截图使用ai修改了，<strong>黑客的具体身份信息官方至今没有公布</strong>。未经证实的耸动说法直接转发，很容易放大谣言，建议先到官方渠道核实再决定。</p>'+
-      '<p>更重要的是：用 AI 从事网络攻击、窃取信息是<strong>错误且违法</strong>的行为，任何时候都不应该这么做。</p>'+
-      '<button class="btn primary block" onclick="goHome()">🔙 返回主界面</button>';
-  } else {
-    html = '<div class="eq fadein">✅ 好眼光——你能对来源不明、过于耸动的说法保持警惕。</div>'+
-      '<p>真相是：<strong>韩国 7 家银行遭遇黑客攻击确实真实发生过</strong>；不过并非一个小学生用AI所为，<strong>具体身份信息，官方至今没有公布</strong>，所以这类说法仍要打上问号。</p>'+
-      '<p>而且无论事件是否属实，用 AI 去攻击、窃取信息都是<strong>错误且违法</strong>的，不应效仿。</p>'+
-      '<button class="btn primary block" onclick="goHome()">🔙 返回主界面</button>';
-  }
-  result.innerHTML = html;
+  var verdict = (choice==='doubt')
+    ? '<div class="eq fadein"></div>'
+    : '<div class="eq fadein"></div>';
+  result.innerHTML = verdict+
+    '<p style="font-size:14px;color:#6b7686;margin:0 0 12px;line-height:1.6;"><b style="color:#c0392b;"></p>'+
+    '<div class="chk-tip"></div>'+
+    '<button class="btn primary block" onclick="revealAllWxMark()">点击此处，查看总体结论</button>'+
+    '<div class="btn secondary block" style="margin-top:10px;background:#eef1f5;color:#6b7686;" onclick="goHome()">🔙 返回主界面</div>';
   result.style.display = 'block';
+  enableWxMark();
 }
+
+/* 微信核查：3 张图的疑点标注 */
+function wxMarkData(){
+  return [
+    {id:'wxImg1', anno:'核心关键信息无任何权威来源，全是民间二次加工。'},
+    {id:'wxImg2', anno:'消息传播里典型的“熟人佐证”式无证据说辞，需要警惕。'},
+    {id:'wxImg3', anno:'移花接木——用官方新闻的真实部分强行佐证，误导性极强，营造出“官方认可完整消息”的错觉。'}
+  ];
+}
+
+var WX_FINISHED = false;
+function enableWxMark(){
+  wxMarkData().forEach(function(s){
+    var el = document.getElementById(s.id);
+    if(!el) return;
+    if(!el.getAttribute('data-wmarked')){
+      el.setAttribute('data-wmarked','1');
+      el._origOnclick = el.onclick;
+      el.onclick = function(){ revealWxMark(s.id); viewWxImg(this); };
+    }
+    el.removeAttribute('data-wdone');
+    el.classList.add('wx-markable');
+  });
+}
+function resetWxMarks(){
+  wxMarkData().forEach(function(s){
+    var el = document.getElementById(s.id);
+    if(!el) return;
+    el.classList.remove('revealed-img','wx-markable');
+    el.removeAttribute('data-wdone');
+    if(el._origOnclick){ el.onclick = el._origOnclick; el._origOnclick = null; }
+    var anno = document.getElementById(s.id+'_anno'); if(anno) anno.remove();
+  });
+  var fin = document.getElementById('wxFinal'); if(fin) fin.remove();
+  WX_FINISHED = false;
+}
+function revealWxMark(id){
+  var meta = wxMarkData().find(function(m){ return m.id === id; });
+  var el = document.getElementById(id);
+  if(!meta || !el || el.getAttribute('data-wdone')==='1') return;
+  el.setAttribute('data-wdone','1');
+  var anno = document.createElement('div');
+  anno.className = 'chk-anno';
+  anno.id = id+'_anno';
+  anno.textContent = meta.anno;
+  el.insertAdjacentElement('afterend', anno);
+  tryCheckAllWxMarked();
+}
+function tryCheckAllWxMarked(){
+  var metas = wxMarkData(); var done = 0;
+  metas.forEach(function(m){ var el=document.getElementById(m.id); if(el && el.getAttribute('data-wdone')==='1') done++; });
+  var tip = document.querySelector('#wxResult .chk-tip'); if(tip) tip.textContent='✅ 已核查 '+done+' / '+metas.length+' 张';
+  if(done >= metas.length) showFinalWx();
+}
+function showFinalWx(){
+  if(WX_FINISHED) return; WX_FINISHED = true;
+  var result = document.getElementById('wxResult');
+  var fin = document.createElement('div');
+  fin.className = 'eq fadein';
+  fin.id = 'wxFinal';
+  fin.style.fontSize='15px'; fin.style.lineHeight='1.8'; fin.style.textAlign='left';
+  fin.style.padding='16px 18px'; fin.style.background='#faf8f1'; fin.style.borderLeft='4px solid #c9a227'; fin.style.borderRadius='0 8px 8px 0';
+  fin.style.margin='14px 0';
+  fin.innerHTML =
+    '<b style="color:#15202b;">🔍 总体核查结论</b><br>'+
+    '这则消息本质是以 <b style="color:#c0392b;">“国外出现 AI 辅助的网络攻击事件”</b> 为基底，'+
+    '经过国内网友层层添油加醋、编段子、拼接真假消息、证据之后形成的不实传言。'+
+    '应当判定为 <b style="color:#c0392b;">不可信</b>，也不要转发传播。';
+  result.insertBefore(fin, result.firstChild.nextSibling);
+}
+function revealAllWxMark(){
+  wxMarkData().forEach(function(m){
+    var el = document.getElementById(m.id); if(el) revealWxMark(m.id);
+  });
+}
+
 </script>
 </body>
 </html>
