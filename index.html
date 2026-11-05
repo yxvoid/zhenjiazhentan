@@ -2,8 +2,9 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>真假侦探 · 数字素养互动</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2311181A'/%3E%3Ccircle cx='16' cy='16' r='7.5' fill='none' stroke='%23B8492F' stroke-width='2'/%3E%3Cpath d='M16 4v5M16 23v5M4 16h5M23 16h5' stroke='%23E9E3D5' stroke-width='1.5'/%3E%3C/svg%3E">
 <!-- 预加载全部图片：让浏览器尽早并行拉取，配合 JS 内的 blob 内存缓存 -->
 <link rel="preload" as="image" href="images/ai1.jpg">
 <link rel="preload" as="image" href="images/ai2.jpg">
@@ -21,564 +22,783 @@
 <link rel="preload" as="image" href="images/my_avatar.jpg">
 <style>
   :root{
-    --bg:#eef1f8; --card:#ffffff; --ink:#1f2633; --sub:#6b7686;
-    --brand:#2743c4; --brand2:#5b6cf0; --good:#18a05e; --bad:#e5484d;
-    --amber:#c9a227; --line:#e6eaf2; --r:18px;
+    --ink:#11181A;            /* 工作台底色 */
+    --ink-deep:#0B1012;
+    --bone:#E9E3D5;           /* 深底上的字 */
+    --bone-70:rgba(233,227,213,.72);
+    --bone-50:rgba(233,227,213,.5);
+    --bone-38:rgba(233,227,213,.38);
+    --hair:rgba(233,227,213,.14);
+    --paper:#EDE7DA;          /* 物件纸 */
+    --paper-ink:#221F1A;
+    --paper-dim:#5E574B;
+    --seal:#B8492F;           /* 朱砂：可疑 / 判错 */
+    --seal-deep:#9C3A24;
+    --verd:#7FA48D;           /* 铜绿：真实 / 判对 */
+    --bar:58px;
+    --serif:"Source Han Serif SC","Noto Serif SC","Songti SC","STSong","SimSun",serif;
+    --sans:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+    --mono:ui-monospace,"SF Mono","Cascadia Mono","Roboto Mono",Menlo,Consolas,monospace;
+    --ease:cubic-bezier(.22,1,.36,1);
   }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{height:100%;}
   body{
-    margin:0; font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
-    background:radial-gradient(1300px 800px at 18% 12%, #eaedfc 0%, #dbe3fa 45%, #ccd8f7 100%);
-    color:var(--ink); display:flex; align-items:center; justify-content:center;
-    overflow:hidden; user-select:none;
+    margin:0; font-family:var(--sans); font-size:15px; color:var(--bone);
+    background:radial-gradient(140% 105% at 50% -15%, #1D282A 0%, #141B1D 46%, #0A0F11 100%);
+    -webkit-font-smoothing:antialiased; overflow:hidden;
   }
-  .phone{
-    position:relative; width:100vw; height:100vh; overflow:hidden;
-    background:linear-gradient(165deg,#eef2fb 0%,#e3eafb 55%,#dbe3fa 100%);
+  /* 工作台的点阵底纹 + 暗角 */
+  body::before{
+    content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background-image:radial-gradient(rgba(233,227,213,.06) 1px, transparent 1px);
+    background-size:26px 26px; opacity:.45;
+  }
+  body::after{
+    content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:radial-gradient(75% 60% at 50% 42%, rgba(0,0,0,0) 40%, rgba(0,0,0,.5) 100%);
+  }
+  ::selection{background:var(--seal); color:#fff;}
+
+  /* ===== 顶栏 ===== */
+  .app{position:relative; height:100vh; height:100dvh; display:flex; flex-direction:column; overflow:hidden; z-index:1;}
+  .topbar{
+    position:relative; z-index:30; flex:0 0 auto; height:var(--bar);
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:0 clamp(14px,3vw,36px); background:var(--ink); border-bottom:1px solid var(--hair);
+  }
+  .tb-left{display:flex; align-items:center; gap:clamp(10px,2vw,20px); min-width:0;}
+  .case{display:none; align-items:center; gap:8px; font-family:var(--mono); font-size:10px;
+    letter-spacing:.12em; color:var(--bone-38); white-space:nowrap;}
+  .case i{display:block; width:5px; height:5px; background:var(--seal); flex:0 0 5px;}
+  .tt{font-family:var(--serif); font-size:16px; font-weight:600; letter-spacing:.08em;
+    color:var(--bone); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .homebtn{
+    appearance:none; flex:0 0 auto; height:40px; padding:0 13px; display:inline-flex; align-items:center;
+    gap:7px; background:transparent; border:1px solid var(--hair); color:var(--bone-50);
+    font-family:var(--sans); font-size:12px; letter-spacing:.06em; cursor:pointer; transition:.2s;
+  }
+  .homebtn:hover{color:var(--bone); border-color:rgba(233,227,213,.34);}
+  .homebtn:active{transform:scale(.97);}
+  .homebtn.hidden{visibility:hidden; pointer-events:none;}
+  .homebtn svg{width:14px; height:14px; flex:0 0 14px;}
+
+  /* ===== 屏幕与容器 ===== */
+  .screen{
+    position:absolute; inset:0; z-index:1; padding-top:var(--bar);
+    display:none; flex-direction:column; overflow-y:auto; overflow-x:hidden;
+    -webkit-overflow-scrolling:touch; scrollbar-width:thin;
+    scrollbar-color:rgba(233,227,213,.18) transparent;
+  }
+  .screen.active{display:flex;}
+  .screen::-webkit-scrollbar{width:7px;}
+  .screen::-webkit-scrollbar-thumb{background:rgba(233,227,213,.16); border-radius:0;}
+  .wrap{
+    width:100%; max-width:1220px; margin:0 auto; flex:1 0 auto;
+    padding:clamp(22px,4vw,44px) clamp(16px,4vw,44px) clamp(34px,6vh,68px);
     display:flex; flex-direction:column;
   }
-  .phone::before{content:''; position:absolute; inset:0; pointer-events:none; z-index:0;
-    background:radial-gradient(640px 420px at 86% 6%, rgba(255,255,255,.55), transparent 60%),
-      radial-gradient(520px 360px at 6% 96%, rgba(91,108,240,.10), transparent 60%);}
-  /* ---- 顶部栏 ---- */
-  .topbar{
-    flex:0 0 auto; display:flex; align-items:center; justify-content:space-between;
-    padding:18px 28px; background:linear-gradient(135deg,var(--brand),var(--brand2));
-    color:#fff; z-index:30; box-shadow:0 4px 18px rgba(30,45,90,.20);
+
+  /* ===== 通用文字 ===== */
+  .kicker{font-family:var(--mono); font-size:10px; letter-spacing:.12em; color:var(--bone-38);
+    margin-bottom:clamp(14px,2.4vw,22px); line-height:1.5;}
+  .rule{height:1px; background:var(--hair); margin:clamp(18px,3vw,30px) 0; position:relative;}
+  .rule::after{content:""; position:absolute; left:0; top:0; width:66px; height:1px; background:var(--seal);}
+  .lede{font-size:clamp(15px,1.5vw,17px); line-height:2.05; color:var(--bone-70);
+    max-width:22em; margin:0; text-wrap:pretty;}
+  .manifest{margin-top:clamp(22px,3vw,32px); border-top:1px solid var(--hair); max-width:380px;}
+  .mrow{display:flex; justify-content:space-between; align-items:baseline; gap:18px;
+    padding:11px 0; border-bottom:1px solid rgba(233,227,213,.07);
+    font-family:var(--mono); font-size:11px; letter-spacing:.1em;}
+  .mrow .k{color:var(--bone-38);}
+  .mrow .v{color:var(--bone-70);}
+  .pagetitle{font-family:var(--serif); font-weight:600; font-size:clamp(24px,3.2vw,36px);
+    letter-spacing:.03em; margin:0 0 8px; line-height:1.3;}
+  .pagesub{font-size:14px; line-height:1.8; color:var(--bone-50); margin:0 0 clamp(22px,3vw,34px);}
+  .fineprint{font-family:var(--mono); font-size:10px; line-height:1.8; letter-spacing:.06em;
+    color:var(--bone-38); margin:16px 0 0;}
+
+  /* ===== 主界面 ===== */
+  .home{display:grid; gap:clamp(30px,4vw,54px); align-content:start;}
+  .title{font-family:var(--serif); font-weight:600; font-size:clamp(42px,9vw,86px);
+    line-height:1.05; letter-spacing:.05em; margin:0; color:var(--bone); text-wrap:balance;}
+  .title .tail{font-size:.3em; letter-spacing:.12em; color:var(--bone-50); margin-left:.18em;}
+  /* 卷宗卡：首页入口不放图，靠纸面 + 文字说清「是什么、点了会怎样」 */
+  .dossiers{display:grid; grid-auto-rows:1fr; gap:clamp(14px,2vw,18px); width:100%;}
+  .dossier{min-height:clamp(132px,16vh,168px);}
+  .dossier{
+    position:relative; display:flex; flex-direction:column; gap:7px; cursor:pointer;
+    padding:clamp(18px,2.4vw,24px) clamp(18px,2.4vw,24px) 0;
+    background:var(--paper); color:var(--paper-ink);
+    border:1px solid rgba(34,31,26,.2);
+    box-shadow:0 16px 34px rgba(0,0,0,.44);
+    transition:transform .3s var(--ease), box-shadow .3s var(--ease);
   }
-  .topbar .tt{font-size:22px; font-weight:800; letter-spacing:2px;}
-  .homebtn{
-    width:54px; height:54px; border-radius:16px; background:rgba(255,255,255,.20);
-    border:none; color:#fff; font-size:24px; cursor:pointer; display:flex;
-    align-items:center; justify-content:center; transition:transform .08s ease,background .2s;
+  .dossier:nth-child(1){transform:rotate(-.7deg);}
+  .dossier:nth-child(2){transform:rotate(.55deg);}
+  .dossier:hover{transform:rotate(0) translateY(-5px); box-shadow:0 26px 52px rgba(0,0,0,.58);}
+  .dossier:active{transform:rotate(0) translateY(-1px);}
+  .dossier:focus-visible{outline:2px solid var(--seal); outline-offset:6px;}
+  .d-top{display:flex; justify-content:space-between; align-items:baseline; gap:14px;
+    font-family:var(--mono); font-size:10px; letter-spacing:.12em; color:#6B6354;}
+  .d-t{font-family:var(--serif); font-weight:600; font-size:clamp(22px,2.7vw,28px);
+    letter-spacing:.06em; line-height:1.35; margin:1px 0 0;}
+  .d-d{font-size:15px; line-height:1.85; color:#4A4335; margin:2px 0 0;}
+  .d-foot{margin-top:auto; display:flex; justify-content:space-between; align-items:center;
+    padding:12px 0 13px; border-top:1px solid rgba(34,31,26,.16);
+    font-family:var(--mono); font-size:11px; letter-spacing:.1em; color:var(--seal-deep);}
+  .d-foot .arw{width:24px; height:24px; display:flex; align-items:center; justify-content:center;
+    border:1px solid rgba(184,73,47,.5); border-radius:50%; font-family:var(--sans);
+    font-size:15px; line-height:1; color:var(--seal); transition:all .3s var(--ease);}
+  .dossier:hover .d-foot .arw{background:var(--seal); border-color:var(--seal); color:#F6F1E6; transform:translateX(4px);}
+
+  /* 相片：白边相纸 */
+  .print{
+    position:relative; background:var(--paper); padding:10px;
+    box-shadow:0 24px 48px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.06);
+    transition:box-shadow .35s var(--ease);
   }
-  .homebtn:active{transform:scale(.93); background:rgba(255,255,255,.3);}
-  .homebtn.hidden{visibility:hidden; pointer-events:none;}
+  .print.rot{transform:rotate(-1.5deg);}
+  .print .ph{position:relative; overflow:hidden; background:#070707;}
+  .print .ph.crop{aspect-ratio:4/3;}
+  .print .ph.free{display:flex; align-items:center; justify-content:center; width:fit-content; max-width:100%; margin:0 auto;}
+  .print .ph.crop img{width:100%; height:100%; object-fit:cover; display:block;}
+  .print .ph.free img{display:block; max-width:100%; width:auto; height:auto;
+    max-height:min(60vh,540px); object-fit:contain;}
+  .print .cap{display:flex; justify-content:space-between; align-items:center; gap:10px;
+    padding:9px 3px 1px; font-family:var(--mono); font-size:10px; letter-spacing:.1em; color:#6B6354;}
 
-  .screen{position:absolute; inset:0; display:none; flex-direction:column;
-    padding-top:92px; overflow-y:auto; -webkit-overflow-scrolling:touch; z-index:1;}
-  .screen.active{display:flex;}
-  .scrolly{padding:28px 44px 40px; flex:1;}
-
-  /* ---- 主界面 ---- */
-  .hero{padding:22px 22px 8px; text-align:center;}
-  .hero .badge{display:inline-block; background:rgba(39,67,196,.10); color:var(--brand);
-    font-size:12px; font-weight:700; padding:5px 12px; border-radius:999px; margin-bottom:10px;}
-  .hero h1{margin:0; font-size:30px; font-weight:900; letter-spacing:1px;}
-  .hero p{margin:8px 0 0; color:var(--sub); font-size:14px;}
-  .menu{padding:16px 18px 28px; display:grid; gap:16px;}
-  .mcard{
-    background:var(--card); border-radius:var(--r); padding:20px; display:flex; gap:16px;
-    align-items:center; box-shadow:0 8px 24px rgba(31,38,51,.06); cursor:pointer;
-    border:2px solid transparent; transition:transform .1s ease,border-color .2s;
+  /* 剪报：印在纸上 */
+  .clip{
+    position:relative; background:var(--paper); color:var(--paper-ink);
+    padding:clamp(16px,2.4vw,22px); transform:rotate(1.1deg);
+    box-shadow:0 24px 48px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.06);
+    transition:box-shadow .35s var(--ease);
   }
-  .mcard:active{transform:scale(.98);}
-  .mcard.blue{border-color:#d8e0ff;}
-  .mcard.green{border-color:#d4f0e2;}
-  .mcard .ico{flex:0 0 54px; height:54px; border-radius:16px; display:flex; align-items:center;
-    justify-content:center; font-size:28px;}
-  .mcard.blue .ico{background:linear-gradient(135deg,var(--brand),var(--brand2));}
-  .mcard.green .ico{background:linear-gradient(135deg,#1aa067,#3fce8d);}
-  .mcard .t{font-size:18px; font-weight:800;}
-  .mcard .d{font-size:13px; color:var(--sub); margin-top:3px; line-height:1.5;}
-  .mcard .arr{margin-left:auto; color:#c3c9d6; font-size:22px;}
+  .clip .mast{display:flex; justify-content:space-between; gap:10px; padding-bottom:8px;
+    border-bottom:1px solid rgba(34,31,26,.22);
+    font-family:var(--mono); font-size:10px; letter-spacing:.14em; color:#6B6354;}
+  .clip .clip-t{font-family:var(--serif); font-weight:700; font-size:clamp(19px,2.2vw,24px);
+    line-height:1.5; letter-spacing:.015em; margin:13px 0 9px; text-wrap:pretty;}
+  .clip .ul{text-decoration:underline; text-decoration-color:var(--seal);
+    text-decoration-thickness:2px; text-underline-offset:4px;}
+  .clip .clip-b{font-size:13px; line-height:1.9; color:#4B4438; margin:0;}
+  .clip .tagline{display:flex; justify-content:space-between; gap:10px; margin-top:14px;
+    padding-top:9px; border-top:1px solid rgba(34,31,26,.16);
+    font-family:var(--mono); font-size:10px; letter-spacing:.1em; color:#6B6354;}
+  .clip .tagline .open{color:var(--seal-deep);}
+  .art:hover .clip{box-shadow:0 34px 66px rgba(0,0,0,.62), 0 0 0 1px rgba(255,255,255,.1);}
 
-  /* ---- 通用按钮 ---- */
-  .btn{appearance:none; border:none; border-radius:16px; padding:14px; font-size:16px;
-    font-weight:800; cursor:pointer; transition:transform .08s ease,opacity .2s;}
-  .btn:active{transform:scale(.97);}
-  .btn.primary{background:var(--brand); color:#fff; box-shadow:0 8px 18px rgba(39,67,196,.25);}
-  .btn.ghost{background:#eef1f8; color:var(--ink);}
-  .btn.good{background:var(--good); color:#fff;}
-  .btn.bad{background:var(--bad); color:#fff;}
-  .btn.block{width:100%;}
-  .row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
-
-  /* ---- 模式选择 ---- */
-  .modecard{background:var(--card); border-radius:var(--r); padding:18px; box-shadow:0 8px 24px rgba(31,38,51,.05);
-    cursor:pointer; border:2px solid var(--line); margin-bottom:14px; transition:transform .1s ease;}
-  .modecard:active{transform:scale(.98);}
-  .modecard .mt{font-size:17px; font-weight:800; display:flex; align-items:center; gap:8px;}
-  .modecard .mt span{font-size:22px;}
-  .modecard .md{font-size:13px; color:var(--sub); margin-top:6px; line-height:1.6;}
-  .modecard .tag{display:inline-block; font-size:11px; font-weight:700; color:var(--brand);
-    background:rgba(39,67,196,.08); border-radius:999px; padding:3px 9px; margin-top:10px;}
-
-  /* ---- 图片题目区 ---- */
-  .qhead{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
-  .qhead .count{font-size:13px; color:var(--sub);}
-  .qhead .count b{color:var(--brand); font-size:16px;}
-  .qback{display:flex; align-items:center; gap:10px;}
-  .qback-btn{appearance:none; border:1px solid #e2e6ec; background:#fff; color:var(--sub);
-    width:26px; height:26px; border-radius:50%; font-size:16px; line-height:1; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; font-weight:700; padding:0;}
-  .qback-btn:active{transform:scale(.92);}
-  .qback-btn:disabled{opacity:.35; cursor:not-allowed;}
-  .prog{height:8px; background:#e2e7f2; border-radius:999px; overflow:hidden; margin-bottom:16px;}
-  .prog i{display:block; height:100%; background:linear-gradient(90deg,var(--brand),var(--brand2));
-    border-radius:999px; transition:width .25s ease;}
-  .stage{
-    background:var(--card); border-radius:var(--r); overflow:hidden; box-shadow:0 8px 24px rgba(31,38,51,.05);
+  /* ===== 玩法/消息 列表 ===== */
+  .alts{display:grid; gap:12px; align-content:start;}
+  .alt{
+    appearance:none; position:relative; width:100%; text-align:left; font:inherit; color:inherit;
+    cursor:pointer; display:grid; grid-template-columns:40px minmax(0,1fr); gap:clamp(14px,2vw,22px);
+    align-items:start; padding:clamp(20px,2.6vw,30px) clamp(46px,3vw,54px) clamp(20px,2.6vw,30px) clamp(18px,2.4vw,26px);
+    border:1px solid var(--hair); background:rgba(233,227,213,.02);
+    transition:background .24s, border-color .24s;
   }
-  .stage .imgwrap{background:#000; position:relative;}
-  .stage img{display:block; width:100%; height:auto; max-height:58vh; object-fit:contain; margin:0 auto;}
-  /* 图片右上角：题号 + 判定结果 */
-  .stage .imgwrap .corner{position:absolute; top:10px; right:10px; display:flex;
+  .alt::after{content:"›"; position:absolute; right:clamp(18px,2.4vw,26px); top:50%;
+    transform:translateY(-50%); font-family:var(--sans); font-size:20px; line-height:1;
+    color:var(--bone-38); transition:color .24s;}
+  .alt:hover::after{color:var(--seal);}
+  .alt:hover{background:rgba(233,227,213,.06); border-color:rgba(233,227,213,.3);}
+  .alt:active{transform:scale(.995);}
+  .alt:focus-visible{outline:2px solid var(--seal); outline-offset:3px;}
+  .alt .ico{width:40px; height:40px; display:flex; align-items:center; justify-content:center; color:var(--bone-50);}
+  .alt:hover .ico{color:var(--seal);}
+  .alt .ico svg{width:28px; height:28px;}
+  .alt-body{display:block; min-width:0;}
+  .alt-t{display:block; font-family:var(--serif); font-size:clamp(18px,2vw,21px);
+    font-weight:600; letter-spacing:.03em; line-height:1.4;}
+  .alt-d{display:block; font-size:14px; line-height:1.8; color:var(--bone-70); margin-top:7px;}
+  .alt-tag{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.1em;
+    color:var(--bone-50); margin-top:12px;}
+
+  /* ===== 答题页 ===== */
+  .playhead{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px;}
+  .rail-meta{font-family:var(--mono); font-size:11px; letter-spacing:.1em; color:var(--bone-50);}
+  .rail-meta b{color:var(--bone); font-weight:400; font-size:14px;}
+  .rail-right{display:flex; align-items:center; gap:12px; font-family:var(--mono);
+    font-size:10px; letter-spacing:.1em; color:var(--bone-38);}
+  .qback-btn{
+    appearance:none; width:34px; height:34px; padding:0; display:flex; align-items:center; justify-content:center;
+    background:transparent; border:1px solid var(--hair); color:var(--bone-70);
+    font-family:var(--sans); font-size:16px; cursor:pointer; transition:.18s;
+  }
+  .qback-btn:hover:not(:disabled){border-color:rgba(233,227,213,.4); color:var(--bone);}
+  .qback-btn:disabled{opacity:.3; cursor:not-allowed;}
+  .rail{height:2px; background:rgba(233,227,213,.12); overflow:hidden; margin-bottom:clamp(20px,3vw,30px);}
+  .rail i{display:block; height:100%; width:0; background:var(--seal); transition:width .3s var(--ease);}
+  .play{display:grid; gap:clamp(20px,3vw,34px); align-items:center;}
+  .qpanel{min-width:0;}
+  .q-k{font-family:var(--mono); font-size:10px; letter-spacing:.16em; color:var(--seal); margin-bottom:11px;}
+  .q-t{font-family:var(--serif); font-weight:600; font-size:clamp(19px,2.2vw,25px);
+    line-height:1.65; letter-spacing:.015em; margin:0 0 8px; text-wrap:pretty;}
+  .q-s{font-size:13.5px; line-height:1.8; color:var(--bone-50); margin:0 0 clamp(18px,2.4vw,26px);}
+
+  .corner{position:absolute; top:10px; right:10px; z-index:2; display:flex;
     flex-direction:column; gap:8px; align-items:flex-end;}
-  .stage .imgwrap .corner span{background:rgba(0,0,0,.55); color:#fff; font-size:11px;
-    padding:3px 9px; border-radius:999px; letter-spacing:.5px; position:static;}
-  .stage .imgwrap .corner .judge-tag{font-weight:900; font-size:22px; letter-spacing:2px; display:none;}
-  .stage .imgwrap .corner .judge-tag.good{background:var(--good) !important; padding:12px 24px !important; border-radius:999px !important; box-shadow:0 4px 16px rgba(0,0,0,.35);}
-  .stage .imgwrap .corner .judge-tag.bad{background:var(--bad) !important; padding:12px 24px !important; border-radius:999px !important; box-shadow:0 4px 16px rgba(0,0,0,.35);}
-  .stage .ask{padding:16px 16px 20px;}
-  .stage .ask h3{margin:0 0 14px; font-size:17px; font-weight:800; text-align:center;}
-  .askbtns{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
-  .askbtns .btn{padding:13px; font-size:15px;}
-  .note{font-size:12px; color:var(--sub); text-align:center; margin-top:14px; line-height:1.6;}
-  .tip{margin-top:18px; padding:14px 16px; border-radius:14px; background:#fff8ec;
-    border:1px solid #f0e2bf; color:#7a6424; font-size:13px; line-height:1.8; text-align:left;}
-  .tip .ti{font-weight:800; margin-bottom:4px;}
+  .ptag{display:inline-block; background:rgba(0,0,0,.62); color:#E9E3D5; padding:4px 9px;
+    font-family:var(--mono); font-size:10px; letter-spacing:.1em;}
+  .judge-tag{
+    display:none; font-family:var(--serif); font-weight:700; letter-spacing:.12em;
+    font-size:clamp(19px,2.3vw,27px); padding:9px 18px; border:2px solid currentColor;
+    background:rgba(6,10,11,.62); transform:rotate(-8deg);
+    animation:stampIn .34s cubic-bezier(.2,1.3,.4,1) both;
+  }
+  .judge-tag.good{color:var(--verd);}
+  .judge-tag.bad{color:#E4654A;}
+  @keyframes stampIn{from{transform:rotate(-8deg) scale(1.28); opacity:0;} to{transform:rotate(-8deg) scale(1); opacity:1;}}
 
-  /* ---- 模式一 完成页 / 模式二 成绩页 ---- */
-  .finish{padding:22px; text-align:center;}
-  .finish .emo{font-size:60px;}
-  .finish .ft{font-size:20px; font-weight:900; margin-top:8px;}
-  .finish .fd{font-size:14px; color:var(--sub); margin:10px 0 22px; line-height:1.7;}
-  .scorewrap{background:var(--card); border-radius:var(--r); padding:26px 22px; text-align:center;
-    box-shadow:0 8px 24px rgba(31,38,51,.06);}
-  .scorewrap .cir{width:118px; height:118px; margin:6px auto 6px; border-radius:50%;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    background:conic-gradient(var(--brand) var(--pct,0%), #e4e9f4 0); position:relative;}
-  .scorewrap .cir::before{content:""; position:absolute; inset:11px; background:#fff; border-radius:50%;}
-  .scorewrap .cir .num{position:relative; font-size:34px; font-weight:900; color:var(--brand);}
-  .scorewrap .cir .num small{font-size:15px; color:var(--sub); font-weight:700;}
-  .scorewrap .cir .lbl{position:relative; font-size:12px; color:var(--sub);}
-  .like{margin:12px 0 4px; font-size:26px;}
-  .scorewrap .verdictline{font-size:16px; font-weight:800;}
-  .scorewrap .rate{font-size:13px; color:var(--sub); margin-top:6px;}
-  .scorewrap .btn{margin:16px 0 4px;}
-  .wronglist{margin-top:18px;}
-  .wronglist .wl-title{font-size:14px; font-weight:800; margin-bottom:10px; display:flex; align-items:center; gap:6px;}
-  .wronggrid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
-  .wrongcard{background:var(--card); border-radius:14px; overflow:hidden; cursor:pointer;
-    border:2px solid #ffe2e3; box-shadow:0 4px 12px rgba(229,72,77,.10); transition:transform .1s ease;}
-  .wrongcard:active{transform:scale(.97);}
-  .wrongcard img{display:block; width:100%; height:92px; object-fit:cover; background:#000;}
-  .wrongcard .cap{font-size:11px; color:var(--bad); text-align:center; padding:6px 4px; font-weight:700;}
-  .wrongcard .gohint{font-size:10px; color:#aab2c3; text-align:center; padding:0 4px 7px;}
-  .nostat{text-align:center; color:var(--good); font-weight:800; font-size:15px; padding:22px 0 6px;}
-  .viewline{text-align:center; font-size:13px; color:var(--sub); margin-top:16px; line-height:1.7;}
+  .stampbtns{display:grid; gap:10px;}
+  .stampbtn{
+    appearance:none; background:transparent; border:1px dashed rgba(233,227,213,.3); color:var(--bone);
+    min-height:62px; padding:12px 10px; display:flex; align-items:center; justify-content:center;
+    font-family:var(--serif); font-size:17px; letter-spacing:.08em; cursor:pointer;
+    transition:border-color .18s, background .18s, color .18s;
+  }
+  .stampbtn:hover{border-style:solid; border-color:rgba(233,227,213,.62); background:rgba(233,227,213,.06);}
+  .stampbtn:active{transform:scale(.985);}
+  .stampbtn:focus-visible{outline:2px solid var(--seal); outline-offset:2px;}
 
-  /* ---- 新闻真实性 ---- */
-  .news-head{display:flex; align-items:center; justify-content:center; gap:8px; font-size:14px;
-    font-weight:800; color:var(--brand); margin:2px 0 14px;}
-  .article{background:#fff; border-radius:var(--r); overflow:hidden; box-shadow:0 8px 24px rgba(31,38,51,.05);}
-  .article .meta{display:flex; justify-content:space-between; padding:14px 16px 10px; font-size:12px; color:#94a0b4;
-    border-bottom:1px solid #eef0f4;}
-  .article .meta b{color:var(--ink);}
-  .article .a-title{font-size:19px; font-weight:900; line-height:1.45; padding:12px 16px 4px; letter-spacing:.3px;}
-  .article .a-sub{font-size:13px; color:#77839a; padding:0 16px 12px; line-height:1.6;}
-  .article .a-body{padding:4px 16px 18px; font-size:14.5px; line-height:1.85; color:#2c3340; text-align:justify;}
-  .article .a-body strong{color:#15202b;}
-  .article .a-section{font-size:15px; font-weight:800; color:#15202b; margin:16px 0 6px;}
-  .article .quoteblock{border-left:3px solid var(--bad); background:#faf2f2; padding:10px 14px;
-    border-radius:0 10px 10px 0; margin:12px 0; font-size:13.5px; color:#5c4a4e; line-height:1.8;}
-  .article .end{margin-top:14px; padding-top:10px; border-top:1px dashed #e2e6ec; font-size:11.5px;
-    color:#a8b0bf; text-align:center;}
-  .judge-box{padding:16px 18px 24px;}
-  .judge-box h4{margin:0 0 12px; font-size:16px; font-weight:800; text-align:center;}
-  .hinttop{text-align:center; font-size:12px; color:var(--sub); margin-top:6px;}
+  /* ===== 按钮 ===== */
+  .btn{
+    appearance:none; border:0; cursor:pointer; font-family:var(--sans); font-size:15px;
+    letter-spacing:.04em; padding:16px 18px; min-height:52px; transition:.2s;
+  }
+  .btn.block{display:block; width:100%;}
+  .btn.primary{background:var(--seal); color:#FBF3E4;}
+  .btn.primary:hover{background:var(--seal-deep);}
+  .btn.solid{background:var(--bone); color:#141B1D;}
+  .btn.solid:hover{background:#F5F0E4;}
+  .btn.secondary{background:transparent; color:var(--paper-dim); border:1px solid rgba(34,31,26,.26);}
+  .btn:active{transform:scale(.99);}
+  .btn:focus-visible{outline:2px solid var(--paper-ink); outline-offset:2px;}
 
-  /* 找证据 */
-  .evbox{display:none; padding:18px; background:#f7f9ff; border-top:1px solid #e6eaf2;}
-  .evbox.open{display:block;}
-  .evbox .q{font-size:15px; font-weight:800; margin-bottom:12px; text-align:center; line-height:1.6;}
-  .chips{display:flex; flex-direction:column; gap:10px;}
-  .chip{border:2px solid #dbe2f5; border-radius:14px; padding:12px 14px; font-size:13.5px; line-height:1.6;
-    cursor:pointer; background:#fff; transition:all .12s ease;}
-  .chip.sel{border-color:var(--brand); background:#edf0ff;}
-  .chip.hit{border-color:var(--good); background:#e9f9f1;}
-  .chip.miss{border-color:var(--bad); background:#fdeeed;}
-  .chip .mark{display:inline-block; width:20px; text-align:center; font-weight:900;}
-  .evfoot{margin-top:14px;}
-  .fadein{animation:pop .25s ease;}
-  @keyframes pop{from{transform:translateY(14px) scale(.96); opacity:0}to{transform:none;opacity:1}}
-  /* ---- 新闻板块（复刻 注意力争夺4-虚假新闻弹窗） ---- */
-  .mcard .ico.imgico{overflow:hidden; padding:0;}
-  .mcard .ico.imgico img{width:100%; height:100%; object-fit:cover; display:block;}
-  .news-page{background:#fff; border-radius:var(--r); overflow:hidden; box-shadow:0 8px 24px rgba(31,38,51,.05);
-    font-family:"PingFang SC","Microsoft YaHei",sans-serif; color:#2c3340; line-height:1.75; font-size:16px;}
-  /* 消息文章页：不收缩、保持完整高度，允许整页上下滚动 */
-  #scr-newsPage .news-page{flex:0 0 auto;}
-  .fn-meta{display:flex; justify-content:space-between; align-items:center; padding:14px 18px 10px;
-    border-bottom:1px solid #eceef2; font-size:13px; color:#8a94a6;}
-  .fn-meta .fn-reporter{font-weight:700; color:#2c3340;}
-  .fn-title{font-size:22px; font-weight:800; color:#15202b; line-height:1.4; margin:14px 18px 6px; letter-spacing:.5px;}
-  .fn-sub{font-size:14px; color:#6b7686; margin:0 18px 14px;}
-  .fn-notice{display:block; width:100%; margin:6px 0 10px; border-radius:8px; padding:0 12px;}
-  .fn-body{margin:12px 18px; text-align:justify; color:#2c3340; font-size:16px;}
-  .fn-body strong{color:#15202b;}
-  .fn-section{font-size:17px; font-weight:700; color:#15202b; margin:18px 18px 2px;}
-  .fn-press{display:block; width:100%; border-radius:8px; margin:8px 0 0; padding:0 12px;}
-  .fn-caption{font-size:13px; color:#97a0b0; line-height:1.5; margin:6px 12px 14px;}
-  .fn-quote{border-left:3px solid #c9a227; background:#faf8f1; padding:10px 14px;
-    border-radius:0 8px 8px 0; margin:14px 18px; color:#5c5650; font-size:15px;}
-  .fn-end{margin-top:22px; padding-top:12px; border-top:1px dashed #e2e6ec; font-size:12px;
-    color:#a8b0bf; text-align:center; margin:0 18px 10px;}
-  .fn-choose{margin-top:0; padding:18px; border-top:1px solid #eef0f4; text-align:center; animation:pop .4s ease;}
-  .fn-choose .fn-q{font-size:18px; font-weight:800; color:#15202b; margin-bottom:18px;}
-  .fn-btns{display:flex; gap:14px; justify-content:center;}
-  .fn-btn{appearance:none; border:none; border-radius:999px; padding:12px 40px; font-size:16px;
-    font-weight:700; cursor:pointer; transition:transform .08s ease,opacity .2s;}
-  .fn-btn:active{transform:scale(.96);}
-  .fn-btn.believe{background:#eef1f5; color:#6b7686;}
-  .fn-btn.doubt{background:var(--bad); color:#fff;}
-  .evidZone{margin-top:0; padding:20px 18px 28px; border-top:1px solid #eef0f4; text-align:center;}
-  .evidZone .eq{font-size:16px; font-weight:800; margin-bottom:20px; text-align:center; line-height:1.7; color:#15202b;}
-  .evidZone .btn{margin:0;}
+  /* ===== 纸张（成绩单 / 回执 / 剪报） ===== */
+  .sheet{
+    background:var(--paper); color:var(--paper-ink);
+    padding:clamp(22px,3.4vw,42px); max-width:840px; margin:0 auto; width:100%;
+    box-shadow:0 34px 72px rgba(0,0,0,.55);
+  }
+  .sheet-head{display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    padding-bottom:11px; border-bottom:1px solid rgba(34,31,26,.2);
+    font-family:var(--mono); font-size:10px; letter-spacing:.12em; color:#6B6354;}
+  .sheet-t{font-family:var(--serif); font-weight:600; font-size:clamp(22px,2.8vw,30px);
+    letter-spacing:.03em; margin:clamp(16px,2.4vw,24px) 0 10px; line-height:1.4;}
+  .sheet-d{font-size:14px; line-height:1.95; color:#4B4438; margin:0; text-wrap:pretty;}
 
-  /* ===== 核查模式：红线标注 ===== */
-  .chk-tip{font-size:14px; color:#c0392b; font-weight:700; margin:6px 18px 4px;}
+  .score-block{margin:clamp(18px,3vw,30px) 0 0;}
+  .score-num{font-family:var(--serif); font-weight:600; font-size:clamp(56px,9vw,100px);
+    line-height:.92; letter-spacing:.02em; color:var(--paper-ink);
+    font-variant-numeric:tabular-nums; display:flex; align-items:baseline; gap:6px;}
+  .score-num small{font-family:var(--mono); font-size:17px; font-weight:400; color:var(--paper-dim); letter-spacing:.06em;}
+  .score-bar{height:3px; background:rgba(34,31,26,.14); margin:18px 0 16px; overflow:hidden;}
+  .score-bar i{display:block; height:100%; width:var(--pct,0%); background:var(--seal); transition:width .5s var(--ease);}
+  .score-verdict{font-family:var(--serif); font-size:clamp(16px,1.9vw,20px); line-height:1.7; color:#22201B;}
+  .score-rate{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; color:#6B6354; margin-top:9px;}
+
+  .perfect{
+    display:none; font-family:var(--serif); font-weight:700; font-size:15px; letter-spacing:.16em;
+    color:var(--seal); border:2px solid var(--seal); padding:6px 14px; transform:rotate(-5deg);
+    margin-top:18px; animation:stampIn .34s cubic-bezier(.2,1.3,.4,1) both;
+  }
+
+  /* 提示块 */
+  .tip{margin-top:clamp(22px,3vw,30px); padding:14px 16px; border-left:2px solid var(--seal);
+    background:rgba(184,73,47,.06);}
+  .tip .ti{font-family:var(--mono); font-size:10px; letter-spacing:.14em; color:var(--seal-deep); margin-bottom:6px;}
+  .tip .tx{font-size:14px; line-height:1.9; color:#4B4438;}
+  .d-tip{margin:18px 0 24px; padding-top:15px; border-top:1px solid var(--hair);
+    font-size:14px; line-height:1.95; color:var(--bone-50); max-width:340px;}
+  .d-tip .k{display:block; font-family:var(--mono); font-size:10.5px; letter-spacing:.16em;
+    color:var(--bone-38); margin-bottom:7px;}
+
+  /* 错题 */
+  .wronglist{margin-top:clamp(24px,3.4vw,34px);}
+  .wl-title{display:flex; align-items:center; gap:8px; font-family:var(--sans);
+    font-size:13px; font-weight:600; color:#22201B; margin-bottom:12px;}
+  .wl-title::before{content:""; width:5px; height:5px; background:var(--seal); flex:0 0 5px;}
+  .wronggrid{display:flex; flex-wrap:wrap; gap:12px;}
+  .wronggrid > *{width:calc(50% - 6px);}
+  .wrongcard{background:none; border:0; padding:0; cursor:pointer; text-align:left; transition:transform .18s;}
+  .wrongcard:active{transform:scale(.98);}
+  .wrongcard img{display:block; width:100%; aspect-ratio:4/3; object-fit:cover; background:#0b0b0b;
+    border:1px solid rgba(34,31,26,.24);}
+  .wrongcard .cap{font-family:var(--mono); font-size:10px; letter-spacing:.08em; color:var(--seal-deep);
+    padding:7px 0 1px;}
+  .wrongcard .gohint{font-family:var(--mono); font-size:9.5px; letter-spacing:.08em; color:#8A8271; padding-top:2px;}
+  .nostat{font-family:var(--serif); font-size:15px; color:#2C4A38; padding:18px 0 4px;}
+  .viewline{font-family:var(--mono); font-size:10px; letter-spacing:.08em; color:#6B6354;
+    margin-top:14px; line-height:1.9;}
+
+  /* ===== 消息（剪报正文） ===== */
+  .paper{
+    background:var(--paper); color:var(--paper-ink); width:100%; max-width:560px;
+    margin:0 auto; padding:clamp(18px,3.4vw,25px);
+    box-shadow:0 34px 72px rgba(0,0,0,.55);
+  }
+  .fn-meta{display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    padding-bottom:10px; border-bottom:1px solid rgba(34,31,26,.22);
+    font-family:var(--mono); font-size:10px; letter-spacing:.12em; color:#6B6354;}
+  .fn-meta .fn-reporter{color:#22201B; font-weight:500;}
+  .fn-title{font-family:var(--serif); font-weight:700; font-size:clamp(23px,3.2vw,32px);
+    line-height:1.5; letter-spacing:.015em; margin:16px 0 10px; text-wrap:pretty;}
+  .fn-sub{font-size:13.5px; line-height:1.85; color:#5E574B; margin:0 0 16px;}
+  .fn-notice,.fn-press{display:block; width:100%; margin:8px 0 10px; padding:0;
+    border:1px solid rgba(34,31,26,.14);}
+  .fn-body{font-family:"PingFang SC","Microsoft YaHei",sans-serif; font-size:15px; line-height:2.0; font-weight:330; color:#121212;
+    margin:0 0 14px; text-align:justify; text-justify:inter-ideograph;}
+  .fn-body strong{color:#3d3937;}
+  .fn-section{font-family:var(--sans); font-size:14.5px; font-weight:700; color:#1E1C19;
+    margin:22px 0 2px; letter-spacing:.02em;}
+  .fn-section::before{content:""; display:inline-block; width:5px; height:5px;
+    background:var(--seal); margin-right:9px; vertical-align:2px;}
+  .fn-caption{font-family:var(--mono); font-size:10px; line-height:1.7; letter-spacing:.06em;
+    color:#7A7364; margin:0 0 14px;}
+  .fn-quote{border-left:2px solid var(--seal); padding:10px 0 10px 15px; margin:18px 0;
+    font-family:var(--serif); font-size:15px; line-height:1.95; color:#3A352C;}
+  .fn-end{margin-top:22px; padding-top:11px; border-top:1px dashed rgba(34,31,26,.2);
+    font-family:var(--mono); font-size:10px; letter-spacing:.08em; color:#8A8271; text-align:center;}
+
+  .fn-choose{margin-top:24px; padding-top:20px; border-top:1px solid rgba(34,31,26,.2); text-align:center;}
+  .fn-q{font-family:var(--serif); font-size:17px; font-weight:600; line-height:1.75;
+    margin:0 0 18px; text-wrap:pretty;}
+  .fn-btns{display:flex; gap:10px; justify-content:center; flex-wrap:wrap;}
+  .fn-btn{
+    appearance:none; background:transparent; border:1px solid rgba(34,31,26,.34); color:var(--paper-ink);
+    padding:12px 34px; min-height:48px; font-family:var(--sans); font-size:15px; letter-spacing:.06em;
+    cursor:pointer; transition:.2s;
+  }
+  .fn-btn:hover{border-color:var(--seal); color:var(--seal-deep);}
+  .fn-btn:active{transform:scale(.98);}
+
+  .evidZone{display:none; margin-top:22px; padding-top:18px; border-top:1px solid rgba(34,31,26,.2);}
+  .eq{font-family:var(--serif); font-size:16px; line-height:1.85;}
+  .chk-intro{font-size:13.5px; line-height:1.85; color:#5E574B; margin:8px 0 12px;}
+  .chk-tip{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; color:var(--seal-deep); margin:0 0 12px;}
   .chk-item{cursor:pointer; transition:background .2s;}
-  .chk-item:hover{background:rgba(192,57,43,.06);}
-  /* 文案：下面画红线 */
-  .chk-item.revealed{text-decoration:underline; text-decoration-color:#c0392b; text-decoration-thickness:2.5px; text-underline-offset:4px;}
-  /* 图片：红圈圈起来 */
-  .chk-item.revealed-img{box-shadow:0 0 0 4px #c0392b; outline:3px solid #c0392b; outline-offset:3px; border-radius:12px;}
-  .chk-anno{color:#c0392b; font-size:14px; font-weight:700; line-height:1.6; margin:4px 18px 10px; padding-left:12px;
-    border-left:3px solid #c0392b; background:rgba(192,57,43,.06); border-radius:0 6px 6px 0; animation:pop .35s ease;}
-  .chk-anno::before{content:"⚠ 疑点："; white-space:pre;}
-  .wx-markable{cursor:pointer;}
-  .wx-markable:hover{filter:brightness(.92);}
-
-  /* ================= 16:9 横屏美化 ================= */
-  .hero{padding:44px 40px 12px;}
-  .hero .badge{font-size:16px; padding:8px 18px; margin-bottom:18px; letter-spacing:1px;}
-  .hero h1{font-size:60px; letter-spacing:4px; color:var(--brand); text-shadow:0 6px 20px rgba(39,67,196,.16);}
-  .hero p{font-size:20px; margin-top:14px; color:#46516a;}
-  .menu{padding:30px 7% 34px; display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:stretch;}
-  .mcard{padding:38px 34px; gap:28px; border-radius:26px;}
-  .mcard .ico{flex:0 0 118px; height:118px; border-radius:28px; font-size:60px;}
-  .mcard .t{font-size:36px;}
-  .mcard .d{font-size:19px; margin-top:12px; line-height:1.65;}
-  .mcard .arr{font-size:42px;}
-  .modecard{padding:28px 30px; border-radius:22px;}
-  .modecard .mt{font-size:26px;}
-  .modecard .md{font-size:18px;}
-  .modecard .tag{font-size:13px; padding:5px 12px; margin-top:14px;}
-  .qhead .count{font-size:17px;}
-  .qhead .count b{font-size:24px;}
-  .prog{margin-bottom:22px;}
-  .stage{border-radius:26px;}
-  .stage .imgwrap img{max-height:60vh;}
-  .stage .ask h3{font-size:23px;}
-  .askbtns .btn{padding:20px; font-size:21px;}
-  .askbtns{max-width:620px; margin:0 auto;}
-  .btn{padding:18px; font-size:19px; border-radius:18px;}
-  .note{font-size:16px; color:#566078;}
-  .tip{font-size:16px; padding:18px 22px; margin-top:22px;}
-  .finish .emo{font-size:80px;}
-  .finish .ft{font-size:32px;}
-  .finish .fd{font-size:19px;}
-  .scorewrap{border-radius:26px;}
-  .scorewrap .cir{width:176px; height:176px;}
-  .scorewrap .cir .num{font-size:54px;}
-  .scorewrap .verdictline{font-size:24px;}
-  .scorewrap .rate{font-size:17px;}
-  .wrongimg .cap{font-size:13px;}
-  /* 新闻文章页：居中固定最大宽度，方便阅读 */
-  #scr-newsPage{justify-content:flex-start;}
-  .news-page{max-width:600px; margin:0 auto;}
-  #scr-newsPage .news-page{flex:0 0 auto; max-width:600px; margin:0 auto;}
-  .fn-title{font-size:27px;}
-  .fn-body{font-size:18px;}
-  .fn-section{font-size:20px;}
-  .fn-choose .fn-q{font-size:21px;}
-  .wronggrid{grid-template-columns:repeat(4, minmax(0,1fr));}
-  .wrongcard img{height:120px;}
-  .wrongcard .cap{font-size:13px;}
-
-
-
-
-  /* ---------------------------------------------------------
-     桌面 / PPT 演示适配：
-     PPT 里放超链接，点击后会调用电脑默认浏览器（Chrome/Edge 等）
-     打开；讲课/汇报时常投到 16:9 大屏。这里把手机式界面在宽屏上
-     居中收窄成「应用框」，避免菜单卡被拉得过宽、观感更好。
-     若想整屏铺满，删掉本段中的 max-width 即可。
-     --------------------------------------------------------- */
-  @media (min-width:1100px){
-    body{background:radial-gradient(1400px 900px at 15% 10%, #eef1fc 0%, #d7dff7 55%, #c3cff2 100%);}
-    .phone{height:96vh; max-width:1280px; margin:2vh auto; border-radius:26px;
-      box-shadow:0 30px 90px rgba(25,35,70,.28);}
-    .menu{max-width:1120px; width:100%; margin:0 auto;}
+  .chk-item:hover{background:rgba(184,73,47,.06);}
+  .chk-item.revealed{text-decoration:underline; text-decoration-color:var(--seal);
+    text-decoration-thickness:2px; text-underline-offset:5px;}
+  .chk-item.revealed-img{outline:2px solid var(--seal); outline-offset:2px;}
+  .chk-anno{
+    position:relative; margin:7px 0 12px; padding:8px 12px 8px 13px;
+    border-left:2px solid var(--seal); background:rgba(184,73,47,.07);
+    font-size:12.5px; line-height:1.85; color:#7A2E22;
+    animation:noteIn .3s var(--ease) both;
   }
+  .chk-anno::before{content:"疑点"; display:inline-block; font-family:var(--mono); font-size:9.5px;
+    letter-spacing:.14em; color:var(--seal); margin-right:8px; vertical-align:1px;}
+  @keyframes noteIn{from{opacity:0; transform:translateY(-4px);} to{opacity:1; transform:none;}}
+  .wx-markable{cursor:pointer; outline:1px dashed rgba(184,73,47,.5); outline-offset:2px;}
+  .windicator{font-family:var(--mono); font-size:9px; letter-spacing:.1em; color:var(--seal);
+    display:block; margin-top:4px;}
 
-  /* 自适应：较窄时两个入口卡上下排列，避免被挤出屏幕 */
-  @media (max-width:760px){
-    .menu{grid-template-columns:1fr;}
+  .stamp-big{
+    display:block; width:max-content; font-family:var(--serif); font-weight:700;
+    font-size:clamp(21px,2.8vw,30px); letter-spacing:.2em; color:var(--seal);
+    border:3px solid var(--seal); padding:6px 18px 8px 22px; transform:rotate(-6deg);
+    margin:0 0 18px; animation:stampIn .4s .1s cubic-bezier(.2,1.3,.4,1) both;
   }
+  .final-note{font-size:14px; line-height:1.95; padding:15px 17px; background:rgba(201,162,39,.07);
+    border-left:3px solid #B8933F; color:#3A352C; margin:0 0 14px;}
+  .final-note b{color:#1E1C19;}
 
-  /* ================= 消息二 · 模拟微信对话界面（手机窄容器） ================= */
-  #scr-wxPage{justify-content:flex-start; align-items:center; overflow:hidden;
-    background:radial-gradient(900px 620px at 72% 8%,#dde2f3,#c7cee7 70%,#bac2e1);}
-  .wx-phone{width:100%; max-width:520px; margin:0 auto; height:calc(100vh - 104px);
-    background:#ededed; box-shadow:0 18px 46px rgba(25,35,70,.35);
-    display:flex; flex-direction:column; overflow:hidden; border-radius:20px;}
-  .wx-nav{flex:0 0 auto; display:flex; align-items:center; gap:6px;
-    padding:14px 12px 12px; background:#f3f3f4; border-bottom:1px solid #dcdcdf;}
-  .wx-nav .wx-back{font-size:26px; cursor:pointer; color:#111; width:32px; text-align:left; line-height:1;}
-  .wx-nav .wx-title{flex:1; text-align:center;}
-  .wx-nav .wx-title b{font-size:17px; color:#111; letter-spacing:1px;}
-  .wx-nav .wx-more{font-size:17px; color:#111; width:32px; text-align:right; letter-spacing:1px;}
-  .wx-body{flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:16px 14px 20px;}
-  .wx-toolbar{flex:0 0 auto; display:flex; align-items:center; gap:12px;
-    padding:9px 12px; background:#f6f6f6; border-top:1px solid #e2e2e4;}
-  .wx-toolbar .tb-input{flex:1; height:36px; line-height:36px; border-radius:6px;
-    background:#fff; border:1px solid #dcdcdf; color:#b6b6ba; font-size:13px; padding:0 12px;}
-  .wx-time{text-align:center; font-size:12px; color:#a6a6a6; margin:0 0 16px;}
-  .wx-row{display:flex; align-items:flex-start; margin-bottom:16px;}
+  /* ===== 微信对话 ===== */
+  #scr-wxPage{align-items:center; justify-content:flex-start; overflow:hidden;}
+  .wx-phone{
+    width:100%; max-width:500px; margin:0 auto; height:calc(100vh - var(--bar) - 22px);
+    height:calc(100dvh - var(--bar) - 22px);
+    display:flex; flex-direction:column; overflow:hidden; background:#E6E4DE; color:#22201B;
+    border:7px solid #080C0D; border-radius:26px;
+    box-shadow:0 30px 70px rgba(0,0,0,.62), 0 0 0 1px rgba(233,227,213,.1);
+  }
+  .wx-nav{flex:0 0 auto; display:flex; align-items:center; gap:6px; padding:11px 12px 10px;
+    background:#EFEDE7; border-bottom:1px solid #D5D2CA;}
+  .wx-nav .wx-back{width:32px; height:28px; display:flex; align-items:center;
+    font-size:22px; color:#222; cursor:pointer; line-height:1;}
+  .wx-nav .wx-title{flex:1; text-align:center; font-size:16px; font-weight:600; color:#191919; letter-spacing:.06em;}
+  .wx-nav .wx-more{font-size:16px; color:#333; width:32px; text-align:right; letter-spacing:.14em;}
+  .wx-body{flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:14px 13px 16px;
+    background:#E6E4DE;}
+  .wx-toolbar{flex:0 0 auto; display:flex; align-items:center; gap:11px; padding:9px 12px;
+    background:#EFEDE7; border-top:1px solid #D5D2CA; color:#8A8A85;}
+  .wx-toolbar svg{width:20px; height:20px; flex:0 0 20px;}
+  .wx-toolbar .tb-input{flex:1; height:34px; line-height:34px; border-radius:5px;
+    background:#FFFDF8; border:1px solid #D5D2CA; color:#8E8E88; font-size:12.5px; padding:0 11px;}
+  .wx-time{text-align:center; font-family:var(--mono); font-size:10px; letter-spacing:.08em;
+    color:#8E8E88; margin:0 0 14px;}
+  .wx-row{display:flex; align-items:flex-start; margin-bottom:14px;}
   .wx-row.me{justify-content:flex-end;}
-  .wx-avatar{width:42px; height:42px; flex:0 0 42px; border-radius:8px;
-    background-size:cover; background-position:center;}
-  .wx-avatar.friend{background:#9aa3c0 url('images/friend_avatar.jpg') center/cover no-repeat;}
-  .wx-avatar.mine{background:#8fc58a url('images/my_avatar.jpg') center/cover no-repeat;}
-  .wx-row .bubble{max-width:72%; padding:11px 14px; border-radius:12px;
-    font-size:15px; line-height:1.6; word-break:break-word;}
-  .wx-row.from .bubble{background:#fff; color:#222; border-top-left-radius:2px; margin-left:10px;}
-  .wx-row.me .bubble{background:#95ec69; color:#111; border-top-right-radius:2px; margin-right:10px;}
-  .wx-single{width:58%; max-width:210px; margin-left:10px; border-radius:8px;
-    object-fit:cover; cursor:pointer; background:#ddd; display:block;}
-  .wx-ask{margin-top:14px; padding:18px 16px; border-radius:16px; background:#f2f3f7; text-align:center;}
-  .wx-ask .eq{font-size:16px; font-weight:800; margin-bottom:16px; line-height:1.7;}
-  .wx-result{margin-top:14px; padding:18px 18px 22px; border-radius:16px;
-    background:#fff; text-align:left; box-shadow:0 4px 14px rgba(0,0,0,.06);}
-  .wx-result .eq{font-size:16px; font-weight:800; text-align:center; line-height:1.7; margin-bottom:12px;}
-  .wx-result p{font-size:14px; line-height:1.8; margin:8px 0; color:#333;}
+  .wx-avatar{width:40px; height:40px; flex:0 0 40px; border-radius:5px;
+    background-size:cover; background-position:center; background-color:#B9BECB;}
+  .wx-avatar.friend{background-image:url('images/friend_avatar.jpg'); background-color:#9aa3c0;}
+  .wx-avatar.mine{background-image:url('images/my_avatar.jpg'); background-color:#8fc58a;}
+  .wx-row .bubble{max-width:70%; padding:10px 13px; border-radius:7px;
+    font-size:14.5px; line-height:1.65; word-break:break-word;}
+  .wx-row.from .bubble{background:#FFFDF8; color:#222; margin-left:9px; border:1px solid #DCD9D1;}
+  .wx-row.me .bubble{background:#9FE07A; color:#17210F; margin-right:9px;}
+  .wx-single{width:56%; max-width:238px; height:300px; margin-left:9px; border-radius:4px;
+    object-fit:cover; object-position:top center; cursor:pointer; background:#D8D5CD; display:block;}
+  .wx-ask{margin-top:12px; padding:18px 16px; border-radius:8px; background:#F1EFE9;
+    border:1px solid #D5D2CA; text-align:center;}
+  .wx-ask .eq{font-size:15.5px; font-weight:600; margin-bottom:16px;}
+  .wx-result{margin-top:12px; padding:16px 15px 20px; border-radius:8px;
+    background:#FFFDF8; text-align:left; box-shadow:0 4px 14px rgba(0,0,0,.07);
+    border:1px solid #DCD9D1; color:#22201B;}
+  .wx-result .eq{font-size:15px; font-weight:600; text-align:center; line-height:1.8; margin-bottom:12px;}
+  .wx-result p{font-size:13px; line-height:1.85; margin:8px 0; color:#4B4438;}
   .wx-result .btn{margin-top:14px;}
-  /* 微信点图看大图：全屏黑色查看器 */
-  .wx-viewer{position:fixed; inset:0; z-index:99; background:rgba(0,0,0,.95);
+
+  .wx-viewer{position:fixed; inset:0; z-index:99; background:rgba(6,10,11,.95);
     display:none; align-items:center; justify-content:center; cursor:pointer;}
   .wx-viewer img{max-width:94vw; max-height:92vh;}
 
-  /* ================= 启动加载页 ================= */
+  /* ===== 启动加载页 ===== */
   #loader{position:fixed; inset:0; z-index:200; display:flex; flex-direction:column;
-    align-items:center; justify-content:center; gap:20px;
-    background:linear-gradient(165deg,#2743c4 0%,#5b6cf0 120%);
-    transition:opacity .4s ease; color:#fff;}
+    align-items:center; justify-content:center; gap:0;
+    background:radial-gradient(60% 50% at 50% 42%, #172124 0%, #0A0F11 70%, #060A0B 100%);
+    color:var(--bone); transition:opacity .35s ease;}
   #loader.out{opacity:0; pointer-events:none;}
-  #loader .l-logo{font-size:40px;}
-  #loader .l-title{font-size:22px; font-weight:900; letter-spacing:3px;}
-  #loader .l-sub{font-size:13px; opacity:.75; letter-spacing:1px;}
-  #loader .l-track{width:min(280px,70vw); height:10px; background:rgba(255,255,255,.22);
-    border-radius:999px; overflow:hidden;}
-  #loader .l-bar{height:100%; width:0; background:#fff; border-radius:999px;
-    transition:width .2s ease;}
-  #loader .l-pct{font-size:16px; font-weight:800;}
+  #loader .l-mark{width:58px; height:58px; margin-bottom:30px; color:var(--seal);}
+  #loader .l-mark svg{width:100%; height:100%; animation:breathe 3.2s ease-in-out infinite;}
+  @keyframes breathe{0%,100%{opacity:.55;} 50%{opacity:1;}}
+  #loader .l-title{font-family:var(--serif); font-size:clamp(26px,2.6vw,34px); font-weight:600;
+    letter-spacing:.18em; margin-bottom:12px;}
+  #loader .l-sub{font-family:var(--mono); font-size:11px; letter-spacing:.16em; color:var(--bone-50); margin-bottom:30px;}
+  #loader .l-track{width:min(300px,66vw); height:2px; background:rgba(233,227,213,.22); overflow:hidden;}
+  #loader .l-bar{height:100%; width:0; background:var(--seal); transition:width .2s linear;}
+  #loader .l-pct{font-family:var(--mono); font-size:11px; letter-spacing:.14em;
+    color:var(--bone-50); margin-top:14px; font-variant-numeric:tabular-nums;}
 
+  /* 颗粒质感 */
+  .grain{position:fixed; inset:0; width:100%; height:100%; z-index:70;
+    pointer-events:none; opacity:.055; mix-blend-mode:overlay;}
+
+  /* ===== 宽屏 ===== */
+  @media (min-width:768px){
+    :root{--bar:66px;}
+    .case{display:inline-flex;}
+    #scr-home .wrap{justify-content:center;}
+    .home{grid-template-columns:minmax(0,1.04fr) minmax(0,.96fr); align-items:center; align-content:center;}
+    .intro{align-self:center;}
+    .dossiers{max-width:520px; margin-left:auto; justify-self:end; width:100%;}
+    .print .ph.crop{aspect-ratio:4/3;}
+    .wronggrid > *{width:calc(25% - 9px);}
+    #scr-imgPlay .wrap, #scr-imgDetail .wrap,
+    #scr-imgMenu .wrap, #scr-newsMenu .wrap{justify-content:center;}
+    #scr-imgMenu .wrap, #scr-newsMenu .wrap{max-width:980px;}
+    .play{grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr); align-items:center;}
+    .play .print{width:fit-content; max-width:100%; margin:0 auto;}
+    .stampbtns{grid-template-columns:1fr 1fr;}
+    .print .ph.free img{max-height:min(52vh,470px);}
+  }
+  @media (min-width:1024px){
+    .title{letter-spacing:.06em;}
+    .wrap{padding-top:clamp(34px,4vh,52px);}
+    .art .desc{font-size:13px;}
+    #scr-newsPage .wrap{max-width:800px;}
+  }
+  @media (max-height:720px) and (min-width:768px){
+    .home{min-height:0;}
+    .print .ph.crop{aspect-ratio:16/10;}
+    .title{font-size:clamp(38px,6vw,64px);}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms !important; animation-iteration-count:1 !important;
+      transition-duration:.01ms !important;}
+    .print.rot,.clip{transform:none;}
+  }
 </style>
 </head>
 <body>
-<div class="phone" id="phone">
+<div class="app" id="phone">
 
-  <!-- 启动加载页：图片全部加载完成前覆盖整个界面 -->
+  <!-- ===== 启动加载页：图片全部就绪前覆盖整个界面 ===== -->
   <div id="loader">
-    <div class="l-logo">🕵️</div>
-    <div class="l-title">真假侦探大挑战</div>
-    <div class="l-sub">正在加载图片，请稍候…</div>
+    <div class="l-mark" aria-hidden="true">
+      <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.3">
+        <path d="M4 16V4h12M32 4h12v12M44 32v12H32M16 44H4V32"></path>
+        <circle cx="24" cy="24" r="9.5"></circle>
+        <path d="M24 11.5v5M24 31.5v5M11.5 24h5M31.5 24h5"></path>
+      </svg>
+    </div>
+    <div class="l-title">真假侦探</div>
+    <div class="l-sub">正在装载证物</div>
     <div class="l-track"><div class="l-bar" id="loaderBar"></div></div>
     <div class="l-pct" id="loaderPct">0%</div>
   </div>
 
+  <!-- ===== 顶栏 ===== -->
   <div class="topbar">
-    <div class="tt" id="topTitle">🕵️ 真假侦探</div>
-    <button class="homebtn" id="homeBtn" title="回到主界面">🏠</button>
+    <div class="tb-left">
+      <span class="case"><i></i>CASE 004</span>
+      <div class="tt" id="topTitle">真假侦探</div>
+    </div>
+    <button class="homebtn hidden" id="homeBtn" title="回到办案台">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+        <path d="M14.5 5.5L8 12l6.5 6.5"></path>
+      </svg>
+      <span>回到办案台</span>
+    </button>
   </div>
 
-  <!-- ===== 主界面 ===== -->
+  <!-- ===== 视图：主界面 ===== -->
   <section class="screen active" id="scr-home">
-    <div class="hero">
-      <span class="badge"></span>
-      <h1>真假侦探大挑战</h1>
-      <p>AI 生成的内容越来越逼真。是真是假，不急着相信——<br>先判断，再找证据！</p>
+    <div class="wrap">
+      <div class="home">
+        <div class="intro">
+          <div class="kicker">CASE 004 · 数字素养互动课</div>
+          <h1 class="title">真假侦探<span class="tail">大挑战</span></h1>
+          <div class="rule"></div>
+          <p class="lede">AI 造出来的图和消息，已经不容易一眼分开。别急着相信！！！</p>
+        </div>
+        <div class="dossiers">
+          <div class="dossier" role="button" tabindex="0" onclick="startImgMenu()">
+            <div class="d-top"><span>证据 01 · 图片</span><span>07 份</span></div>
+            <div class="d-t">图片判别</div>
+            <div class="d-d">实拍与生成混杂，逐份判定</div>
+            <div class="d-foot"><span>打开卷宗</span><span class="arw" aria-hidden="true">›</span></div>
+          </div>
+          <div class="dossier" role="button" tabindex="0" onclick="enterNews()">
+            <div class="d-top"><span>证据 02 · 消息</span><span>02 则</span></div>
+            <div class="d-t">消息判别</div>
+            <div class="d-d">两则正在传的消息。读完再决定：信不信，转不转。</div>
+            <div class="d-foot"><span>打开卷宗</span><span class="arw" aria-hidden="true">›</span></div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="menu">
-      <div class="mcard blue" onclick="startImgMenu()">
-        <div class="ico">🖼️</div>
-        <div class="txt">
-          <div class="t">图片判别</div>
-          <div class="d">判断图片是「AI 生成」还是「真实照片」</div>
-        </div>
-        <div class="arr">›</div>
-      </div>
-      <div class="mcard green" onclick="enterNews()">
-        <div class="ico imgico"><img src="images/news_press.png" alt="消息"></div>
-        <div class="txt">
-          <div class="t">消息真实性判别</div>
-          <div class="d">读消息 → 判断「可信」还是「不可信」</div>
-        </div>
-        <div class="arr">›</div>
-      </div>
   </section>
 
-  <!-- ===== 图片判别·选择玩法 ===== -->
+  <!-- ===== 视图：图片判别 · 选择玩法 ===== -->
   <section class="screen" id="scr-imgMenu">
-    <div class="scrolly">
-      <div class="modecard" onclick="startImg(1)">
-        <div class="mt"><span></span>模式一 · 逐题判定</div>
-        <div class="md">看一张图片，点击后图片右上角<strong>立即呈现「判定正确 / 判定错误」</strong>。</div>
-        <span class="tag">一题一判 · 立即反馈</span>
+    <div class="wrap">
+      <h2 class="pagetitle">图片判别</h2>
+      <p class="pagesub">两种判法，选其一进入，即时判定，或终局结算</p>
+      <div class="alts">
+        <button class="alt" onclick="startImg(1)">
+          <span class="ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+              <rect x="3" y="5" width="18" height="14"></rect>
+              <path d="M3 16l5-4.2 4 3.4 3-2.4 6 4.6"></path>
+              <circle cx="8.4" cy="9" r="1.3"></circle>
+            </svg>
+          </span>
+          <span class="alt-body">
+            <span class="alt-t">逐题判定</span>
+            <span class="alt-d">看一张，判一张。落章见结果。</span>
+            <span class="alt-tag">模式一 · 立即反馈</span>
+          </span>
+        </button>
+        <button class="alt" onclick="startImg(2)">
+          <span class="ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+              <path d="M3.5 19.5h17"></path>
+              <path d="M6.5 19.5V11M11 19.5V6M15.5 19.5v-6M20 19.5v-11"></path>
+            </svg>
+          </span>
+          <span class="alt-body">
+            <span class="alt-t">闯关计分</span>
+            <span class="alt-d">七份连判，统一结算。</span>
+            <span class="alt-tag">模式二 · 最后结算</span>
+          </span>
+        </button>
       </div>
-      <div class="modecard" onclick="startImg(2)">
-        <div class="mt"><span></span>模式二 · 闯关计分</div>
-        <div class="md">一次性判别全部图片，最后按正确率<strong>计算总分</strong>，并为你<strong>标出答错的图片</strong>。</div>
-        <span class="tag">全部判断 · 按正确率计分</span>
-      </div>
+    </div>
   </section>
 
-  <!-- ===== 图片判别 · 题目页（模式一&二共用） ===== -->
+  <!-- ===== 视图：图片判别 · 答题（模式一、二共用） ===== -->
   <section class="screen" id="scr-imgPlay">
-    <div class="scrolly">
-      <div class="qhead">
-        <div class="count">第 <b id="pCur">1</b> / <span id="pTot">7</span> 题</div>
-        <div class="qback">
-          <button class="qback-btn" id="pBack" onclick="backImgQ()" title="返回上一题">‹</button>
-          <div id="pModeTag" class="count"></div>
+    <div class="wrap">
+      <div class="playhead">
+        <div class="rail-meta">第 <b id="pCur">1</b> 份 / 共 <span id="pTot">7</span> 份</div>
+        <div class="rail-right">
+          <span id="pModeTag"></span>
+          <button class="qback-btn" id="pBack" onclick="backImgQ()" title="退回上一份" aria-label="退回上一份">‹</button>
         </div>
       </div>
-      <div class="prog"><i id="pBar" style="width:0"></i></div>
-      <div class="stage">
-        <div class="imgwrap">
-          <img id="pImg" alt="待判图片">
-          <div class="corner">
-            <span id="pNum">图片 1</span>
-            <span id="pJudge" class="judge-tag"></span>
+      <div class="rail"><i id="pBar"></i></div>
+      <div class="play">
+        <div class="print">
+          <div class="ph free">
+            <img id="pImg" alt="待判定的图片">
+            <div class="corner">
+              <span class="ptag" id="pNum">证据 1</span>
+              <span class="judge-tag" id="pJudge"></span>
+            </div>
           </div>
         </div>
-        <div class="ask">
-          <h3>这张图片是 AI 生成的，还是真实照片？</h3>
-          <div class="askbtns" id="pAskBtns">
-            <button class="btn primary" id="btnAI">AI 生成</button>
-            <button class="btn ghost" id="btnReal">真实照片</button>
+        <div class="qpanel">
+          <div class="q-k">请判定</div>
+          <div class="q-t">这张图片是 AI 生成的，还是真实拍摄的？</div>
+          <div class="q-s">看手、看字、看边缘、看光影对不对...</div>
+          <div class="stampbtns" id="pAskBtns">
+            <button class="stampbtn" id="btnAI">AI 生成</button>
+            <button class="stampbtn" id="btnReal">真实照片</button>
           </div>
-          <button class="btn primary block" id="pNext" style="display:none"></button>
+          <button class="btn solid block" id="pNext" style="display:none"></button>
+          <div class="fineprint">判定只是第一步，说得出理由才算强。</div>
         </div>
       </div>
-      <p class="note">/p>
     </div>
   </section>
 
-  <!-- ===== 模式一 · 完成页 ===== -->
+  <!-- ===== 视图：模式一 · 归档回执 ===== -->
   <section class="screen" id="scr-imgFinish1">
-    <div class="scrolly">
-      <div class="finish fadein">
-        <div class="emo"></div>
-        <div class="ft">7 张图片判定完成！</div>
-        <div class="fd"><br><strong></strong>。</div>
-        <div class="tip"><div class="ti">💡 温馨提示</div>现在 AI 图片造假水平越来越高，演示图片存在瑕疵，易被发现生成痕迹。网络图片若无法判别真假，可到<strong>国家反诈中心 App</strong> 的「AI 内容鉴定」界面进行检测。</div>
-        <button class="btn primary block" onclick="startImgMenu()">返回玩法选择</button>
-        <div style="height:12px"></div>
-        <button class="btn ghost block" onclick="goHome()">回到主界面</button>
+    <div class="wrap">
+      <div class="sheet">
+        <div class="sheet-head"><span>归档回执 · 图片判别</span><span>CASE 004</span></div>
+        <h2 class="sheet-t">七张图片，判完了</h2>
+        <p class="sheet-d"></p>
+        <div class="tip">
+          <div class="ti">提示</div>
+          <div class="tx">现在 AI 图片造假水平越来越高，演示用的图片仍有瑕疵，容易被看出来。网上遇到拿不准的图，可以到国家反诈中心 App 的「AI 内容鉴定」界面做检测。</div>
+        </div>
+        <div style="margin-top:clamp(22px,3vw,30px)">
+          <button class="btn primary block" onclick="startImgMenu()">返回玩法选择</button>
+          <div style="height:10px"></div>
+          <button class="btn secondary block" onclick="goHome()">回到办案台</button>
+        </div>
       </div>
+    </div>
   </section>
 
-  <!-- ===== 模式二 · 成绩页 ===== -->
+  <!-- ===== 视图：模式二 · 成绩单 ===== -->
   <section class="screen" id="scr-imgScore">
-    <div class="scrolly">
-      <div class="scorewrap fadein">
-        <div class="cir" id="scoreCir"><div class="num" id="scoreNum">0<small>/7</small></div><div class="lbl">得分</div></div>
-        <div class="like" id="scoreLike"></div>
-        <div class="verdictline" id="scoreVerdict"></div>
-        <div class="rate" id="scoreRate"></div>
+    <div class="wrap">
+      <div class="sheet">
+        <div class="sheet-head"><span>判定成绩单 · 图片判别</span><span>CASE 004</span></div>
+        <div class="score-block" id="scoreCir">
+          <div class="score-num" id="scoreNum">0<small>/7</small></div>
+          <div class="score-bar"><i></i></div>
+          <div class="score-verdict" id="scoreVerdict"></div>
+          <div class="score-rate" id="scoreRate"></div>
+          <div class="perfect" id="perfectStamp">全部命中</div>
+        </div>
+        <div class="tip">
+          <div class="ti">提示</div>
+          <div class="tx">现在 AI 图片造假水平越来越高，演示用的图片仍有瑕疵，容易被看出来。网上遇到拿不准的图，可以到国家反诈中心 App 的「AI 内容鉴定」界面做检测。</div>
+        </div>
+        <div class="wronglist" id="wrongListWrap" style="display:none">
+          <div class="wl-title">错判记录 · 点开复核</div>
+          <div class="wronggrid" id="wrongGrid"></div>
+        </div>
+        <div class="nostat" id="allRightTip" style="display:none">全部答对。</div>
+        <div class="viewline" id="viewLine" style="display:none">点击查看。</div>
       </div>
-
-      <div class="tip"><div class="ti">💡 温馨提示</div>现在 AI 图片造假水平越来越高，演示图片存在瑕疵，易被发现生成痕迹。网络图片若无法判别真假，可到<strong>国家反诈中心 App</strong> 的「AI 内容鉴定」界面进行检测。</div>
-
-      <div class="wronglist" id="wrongListWrap" style="display:none">
-        <div class="wl-title">答错的图片 —— 点击查看</div>
-        <div class="wronggrid" id="wrongGrid"></div>
-      </div>
-      <div class="nostat" id="allRightTip" style="display:none">全部答对，没有看错任何一张。</div>
-      <div class="viewline" id="viewLine" style="display:none">点击上方答错的图片，可查看图片详情</div>
     </div>
   </section>
 
-  <!-- ===== 图片详情页（模式二点错图进入） ===== -->
+  <!-- ===== 视图：图片详情 ===== -->
   <section class="screen" id="scr-imgDetail">
-    <div class="scrolly">
-      <div class="qhead"><div class="count">图片详情</div><div class="count" id="dModeTag"></div></div>
-      <div class="stage">
-        <div class="imgwrap">
-          <img id="dImg" alt="">
-          <div class="corner"><span id="dNum"></span></div>
+    <div class="wrap">
+      <div class="playhead">
+        <div class="rail-meta">图片详情</div>
+        <div class="rail-right"><span id="dModeTag"></span></div>
+      </div>
+      <div class="play" style="margin-top:18px">
+        <div class="print">
+          <div class="ph free">
+            <img id="dImg" alt="">
+            <div class="corner"><span class="ptag" id="dNum"></span></div>
+          </div>
         </div>
-        <div class="ask">
-          <h3 id="dVerdict"></h3>
+        <div class="qpanel">
+          <div class="q-k">正确答案</div>
+          <div class="q-t" id="dVerdict"></div>
+          <div class="d-tip">
+            <span class="k">判别四看</span>
+            手、字、边缘、光影——AI 最容易在这四处露馅。回头再看一眼这张，哪里对不上。
+          </div>
+          <button class="btn solid block" id="dBackBtn">返回成绩</button>
         </div>
-      </div>
-      <div style="margin-top:16px">
-        <button class="btn primary block" id="dBackBtn">← 返回成绩</button>
-      </div>
-  </section>
-
-  <!-- ===== 消息真假性判别 · 消息选择页 ===== -->
-  <section class="screen" id="scr-newsMenu">
-    <div class="scrolly">
-      <div class="modecard" onclick="goNewsPage()">
-        <div class="mt"><span>📢</span>消息一 · 小学生课间休息或将延长</div>
-        <div class="md">网传“全国小学生课间休息时间将统一延长到15分钟”，多地先行试点。</div>
-        <span class="tag">读消息 → 判断是否可信</span>
-      </div>
-      <div class="modecard" onclick="openWxChat()">
-        <div class="mt"><span>💬</span>消息二 · 小学生用AI黑进韩国7家银行</div>
-        <div class="md">朋友在微信里发来劲爆消息，还附上了截图。你会相信并转发吗？</div>
-        <span class="tag">微信对话 → 判断后再转发</span>
       </div>
     </div>
   </section>
 
-  <!-- ===== 消息真假性判别 · 纯谣言文章页 ===== -->
+  <!-- ===== 视图：消息判别 · 选择 ===== -->
+  <section class="screen" id="scr-newsMenu">
+    <div class="wrap">
+      <h2 class="pagetitle">消息判别</h2>
+      <p class="pagesub">流传消息，熟真熟假。</p>
+      <div class="alts">
+        <button class="alt" onclick="goNewsPage()">
+          <span class="ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+              <path d="M4 5.5h12v13H4z"></path>
+              <path d="M16 8.5h4v10H6.5"></path>
+              <path d="M7 8.5h6.5M7 12h6.5M7 15.5h4"></path>
+            </svg>
+          </span>
+          <span class="alt-body">
+            <span class="alt-t">消息一 · 课间休息或将延长</span>
+            <span class="alt-d">网传「全国小学生课间休息统一延长到 15 分钟」，多地先行试点。</span>
+            <span class="alt-tag">读全文 · 再决定转不转发</span>
+          </span>
+        </button>
+        <button class="alt" onclick="openWxChat()">
+          <span class="ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+              <path d="M3.5 5.5h17v10.5H9.5L5 20V5.5z"></path>
+              <path d="M7.5 9h9M7.5 12.5h5.5"></path>
+            </svg>
+          </span>
+          <span class="alt-body">
+            <span class="alt-t">消息二 · 小学生用 AI 黑进银行</span>
+            <span class="alt-d">朋友在微信里发来劲爆消息，还附了三张截图。你会信，还会转？</span>
+            <span class="alt-tag">微信对话 · 判断后再决定</span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 视图：消息一 · 剪报正文 ===== -->
   <section class="screen" id="scr-newsPage">
-    <div class="news-page">
-        <div class="fn-meta"><span class="fn-reporter">教育快讯</span><span>2026年10月19日 21:12</span></div>
-        <h1 class="fn-title" id="fnTitle">重磅！最新通知：全国小学生课间休息时间将延长到15分钟</h1>
+    <div class="wrap">
+      <div class="paper" id="newsPaper">
+        <div class="fn-meta"><span class="fn-reporter">教育快讯</span><span>2026 年 10 月 19 日 21:12</span></div>
+        <h1 class="fn-title" id="fnTitle">重磅！最新通知：全国小学生课间休息时间将延长到 15 分钟</h1>
         <div class="fn-sub">多地已先行试点，家长群热议：课间时间能不能全国统一延长？</div>
         <img class="fn-notice" src="images/news_notice.jpg" alt="重磅通知">
-        <p class="fn-body">继“把课间还给孩子”引发全民热议后，记者多方了解到，全国小学生课间休息时间或将迎来大调整。据多名教育系统内部人士透露，一份关于“优化中小学课间管理”的指导性文件正在研究制定中，拟将小学课间休息时间由目前的10分钟统一延长至15分钟，消息一出，家长群、教师群迅速刷屏。</p>
+        <p class="fn-body">继“把课间还给孩子”引发全民热议后，记者多方了解到，全国小学生课间休息时间或将迎来大调整。据多名教育系统内部人士透露，一份关于“优化中小学课间管理”的指导性文件正在研究制定中，拟将小学课间休息时间由目前的 10 分钟统一延长至 15 分钟，消息一出，家长群、教师群迅速刷屏。</p>
         <p class="fn-body">事实上，课间时间太短的问题并非刚刚被注意到。去年以来，教育部多次强调要保障学生课间休息和体育活动时间。</p>
         <div class="fn-section">一、多地“已先行”</div>
-        <p class="fn-body" id="p529">据记者不完全梳理，目前山东济南、河南郑州已有城区学校在新学期悄悄执行“新作息表”：上午下午各两节15分钟课间，并新增“自由活动铃”。有家长晒出的新版课程表显示，课间由原先的“10分钟”一栏，改成了印着“课间活动15分钟”。某省会城市还传出消息，将把课间延长与教师考勤、值日轮岗挂钩，确保“不拖堂、不挤占”。</p>
+        <p class="fn-body" id="p529">据记者不完全梳理，目前山东济南、河南郑州已有城区学校在新学期悄悄执行“新作息表”：上午下午各两节 15 分钟课间，并新增“自由活动铃”。有家长晒出的新版课程表显示，课间由原先的“10 分钟”一栏，改成了印着“课间活动 15 分钟”。某省会城市还传出消息，将把课间延长与教师考勤、值日轮岗挂钩，确保“不拖堂、不挤占”。</p>
         <div class="fn-section">二、如何推进</div>
         <p class="fn-body" id="p531">多位消息人士称，文件如期落地后，将采取“分批推进”方式：先在一二线城市主城区推行，再逐步覆盖县镇学校，预计最快明年春季学期起，覆盖大部分区域。有学校已提前为每个班级划定了“课间活动区”，并采购了一批跳绳、毽子和地面游戏贴纸。至于是否同步调整放学时间、作业量，目前还没有确切说法。</p>
         <img class="fn-press" id="fnPressImg" src="images/news_press.png" alt="课间活动">
         <p class="fn-caption">▲ 发言人谈到保障学生课间休息活动时间</p>
-        <div class="fn-quote" id="fnQuote">“课间从10分钟延长到15分钟，表面看只是5分钟之差，但对缓解学生久坐疲劳、保护视力、提高下一节课专注度都有正向作用。关键不在于多这5分钟，而在于能不能真正把时间还给孩子。”——教育学者林教授（化名）</div>
+        <div class="fn-quote" id="fnQuote">“课间从 10 分钟延长到 15 分钟，表面看只是 5 分钟之差，但对缓解学生久坐疲劳、保护视力、提高下一节课专注度都有正向作用。关键不在于多这 5 分钟，而在于能不能真正把时间还给孩子。”——教育学者林教授（化名）</div>
         <p class="fn-body">消息在网上迅速发酵。有家长表示“早就该这样了，孩子每天回来都说没时间上厕所”，也有家长担忧“课间长了会不会更拖沓、孩子更容易分心”。而大多数小学生则在班级群里欢呼雀跃，有网友调侃“这才是真正的减负从课间做起”。</p>
 
         <div class="fn-choose" id="judgeZone">
-          <p class="fn-q">这条“全国小学生课间休息将延长到15分钟”的消息，你相信并愿意转发吗？</p>
+          <p class="fn-q">这条“全国小学生课间休息将延长到 15 分钟”的消息，你相信，并且愿意转发吗？</p>
           <div class="fn-btns">
-            <button class="fn-btn believe" id="nBelieve">转发</button>
-            <button class="fn-btn doubt" id="nDoubt">不转发</button>
+            <button class="fn-btn" id="nBelieve">转发</button>
+            <button class="fn-btn" id="nDoubt">不转发</button>
           </div>
         </div>
-        <div class="evidZone" id="evidZone" style="display:none"></div>
+        <div class="evidZone" id="evidZone"></div>
       </div>
+    </div>
   </section>
 
-  <!-- ===== 消息二 · 模拟微信对话界面 ===== -->
+  <!-- ===== 视图：消息二 · 微信对话 ===== -->
   <section class="screen" id="scr-wxPage">
     <div class="wx-phone">
       <div class="wx-nav">
-        <span class="wx-back" onclick="go('newsMenu')">‹</span>
-        <div class="wx-title"><b>朋友</b></div>
+        <span class="wx-back" onclick="go('newsMenu')" title="返回" aria-label="返回">‹</span>
+        <div class="wx-title">朋友</div>
         <span class="wx-more">···</span>
       </div>
 
       <div class="wx-body">
-        <div class="wx-time">10月20日 14:32</div>
+        <div class="wx-time">10 月 20 日 14:32</div>
 
         <div class="wx-row from">
           <div class="wx-avatar friend"></div>
@@ -586,7 +806,7 @@
         </div>
         <div class="wx-row from">
           <div class="wx-avatar friend"></div>
-          <div class="bubble">广东有个小学生用ai把韩国七家银行打穿了</div>
+          <div class="bubble">广东有个小学生用 AI 把韩国七家银行打穿了</div>
         </div>
         <div class="wx-row from">
           <div class="wx-avatar friend"></div>
@@ -610,54 +830,62 @@
         </div>
 
         <div class="wx-ask" id="wxAsk">
-          <p class="eq">请问：这条消息你愿意相信并转发吗？</p>
+          <p class="eq">这条消息，你愿意相信并转发吗？</p>
           <div class="fn-btns">
-            <button class="fn-btn believe" onclick="judgeWx2('believe')">可信</button>
-            <button class="fn-btn doubt" onclick="judgeWx2('doubt')">不可信</button>
+            <button class="fn-btn" onclick="judgeWx2('believe')">转发</button>
+            <button class="fn-btn" onclick="judgeWx2('doubt')">不转发</button>
           </div>
         </div>
         <div class="wx-result" id="wxResult" style="display:none"></div>
       </div>
 
       <div class="wx-toolbar">
-        <span style="font-size:20px">🎙️</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+          <rect x="9" y="2.8" width="6" height="11" rx="3"></rect>
+          <path d="M5 11a7 7 0 0 0 14 0M12 18v3.2M8.8 21.2h6.4"></path>
+        </svg>
         <div class="tb-input">发消息…</div>
-        <span style="font-size:18px">➕</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+          <circle cx="12" cy="12" r="8.6"></circle>
+          <path d="M12 7.4v9.2M7.4 12h9.2"></path>
+        </svg>
       </div>
     </div>
   </section>
 
-  <!-- 微信点图看大图：全屏查看器 -->
+  <!-- 微信点图看大图 -->
   <div class="wx-viewer" id="wxViewer" onclick="this.style.display='none'">
     <img id="wxViewerImg" alt="大图">
   </div>
 
-</div><!-- /phone -->
+</div><!-- /app -->
+
+<!-- 颗粒质感层：让画面像印刷品而不是网页 -->
+<svg class="grain" aria-hidden="true">
+  <filter id="grainFilter"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"></feTurbulence></filter>
+  <rect width="100%" height="100%" filter="url(#grainFilter)"></rect>
+</svg>
 
 <script>
 /* =========================================================
-   图片内存缓存（解决手机端 HTTP 缓存被清除的问题）
-   -----------------------------------------------------------------
-   手机浏览器会因内存压力随时清掉 HTTP 缓存（尤其是 iOS Safari），
-   导致即使「预加载」过、游玩时仍会重新联网慢慢加载。
-   因此这里把每张图用 fetch() 拉成 Blob 存进 JS 内存，
-   再用 URL.createObjectURL(blob) 生成 blob: 地址供 <img> 使用——
-   游玩全程不再访问网络，任何缓存清理都影响不到。
+   图片内存缓存（机制不变）
+   手机浏览器会因内存压力随时清掉 HTTP 缓存，导致即使「预加载」过、
+   游玩时仍会重新联网。这里把每张图 fetch 成 Blob 存进 JS 内存，
+   再用 URL.createObjectURL(blob) 生成 blob: 地址供 <img> 使用。
    ========================================================= */
 var ALL_IMAGES = [
-  // 图片判别 7 张
+  /* 图片判别 7 张 */
   'images/ai1.jpg','images/ai2.jpg','images/ai3.jpg','images/ai4.jpg',
   'images/ai5.jpg','images/ai6.jpg','images/real.jpg',
-  // 消息板块
+  /* 消息板块 */
   'images/news_notice.jpg','images/news_press.png',
-  // 微信对话
+  /* 微信对话 */
   'images/1.jpg','images/2.jpg','images/3.jpg',
-  // 头像
+  /* 头像 */
   'images/friend_avatar.jpg','images/my_avatar.jpg'
 ];
-/* 原网络路径 -> blob 对象地址 的内存映射。全局暴露，供各处 <img> 使用 */
+/* 原路径 -> blob 地址 的内存映射 */
 var IMG_CACHE = {};
-/* 取图片的显示地址：已有 blob 则直接用，否则退回原路径（防止个别失败） */
 function imgUrl(src){
   return IMG_CACHE[src] || src;
 }
@@ -668,8 +896,8 @@ function imgUrl(src){
   var pctEl = document.getElementById('loaderPct');
   var total = ALL_IMAGES.length;
   var loaded = 0;
-  var revealed = false;   // 是否已放行主界面
-  var pending = {};       // 每张图是否仍未完成（去重计数用）
+  var revealed = false;
+  var pending = {};
 
   function tick(){
     var pct = Math.round(loaded/total*100);
@@ -677,42 +905,38 @@ function imgUrl(src){
     if(pctEl){ pctEl.textContent = pct + '%'; }
   }
   function reveal(){
-    if(revealed) return;           // 只放行一次
+    if(revealed) return;
     revealed = true;
-    /* 全部就绪：淡出加载页，显示主界面 */
     if(loader){
       loader.classList.add('out');
       setTimeout(function(){ loader.style.display = 'none'; }, 400);
     }
-    /* 把页面里写死的静态图片/头像也切成内存 blob，游玩全程不再走网络 */
     bindStatic();
   }
   function checkDone(){
-    if(loaded >= total) reveal();  // 所有图片都确认完成（含失败）才放行
+    if(loaded >= total) reveal();
   }
-  /* 单张图标记完成：同一张图可能被两种机制各触发一次，这里去重 */
   function resolved(u){
-    if(!pending[u]) return;        // 已计过数，忽略
+    if(!pending[u]) return;
     delete pending[u];
     loaded++; tick(); checkDone();
   }
-  /* 安全兜底：40 秒后无条件放行，避免个别图片卡死导致永远进不去 */
+  /* 安全兜底：40 秒后无条件放行 */
   setTimeout(reveal, 40000);
 
   ALL_IMAGES.forEach(function(u){
     pending[u] = true;
 
-    /* 机制A：经典 <img> 预加载 —— 所有浏览器/微信都支持，必能成功，
-       结果写入浏览器 HTTP 缓存，游玩时 <img> 用原路径也能秒开。 */
+    /* 机制A：经典 <img> 预加载，结果写入 HTTP 缓存 */
     var im = new Image();
     im.onload  = function(){ resolved(u); };
     im.onerror = function(){ resolved(u); if(window.console) console.warn('预加载失败: '+u); };
     im.src = u;
 
-    /* 机制B：fetch 拉成 Blob 存进内存（绕过 HTTP 缓存被清的问题）。
-       仅在支持 fetch 的环境开启；微信等不支持/失败时自动跳过，
-       不参与计数，仍由上面的机制A保证图片已加载。 */
-    if(window.fetch && window.URL && window.URL.createObjectURL){
+    /* 机制B：fetch 拉成 Blob 存进内存，绕过缓存被清的问题。
+       file:// 协议下浏览器禁止 fetch 本地文件，会刷一屏 CORS 报错，
+       所以只在 http(s) 下启用；此时机制A 已把图写入 HTTP 缓存，不影响游玩。 */
+    if(location.protocol !== 'file:' && window.fetch && window.URL && window.URL.createObjectURL){
       fetch(u).then(function(r){
         if(!r.ok) throw new Error('HTTP '+r.status);
         return r.blob();
@@ -728,18 +952,16 @@ function imgUrl(src){
   tick();
 })();
 
-/* 把所有静态 <img> 与 CSS 头像背景，替换成内存 blob 地址 */
+/* 把静态 <img> 与 CSS 头像背景替换成内存 blob 地址 */
 function bindStatic(){
-  /* 静态 <img> 标签 */
   var imgs = document.querySelectorAll('img');
   for(var i=0;i<imgs.length;i++){
     var im = imgs[i];
     var orig = im.getAttribute('src');
     if(!orig) continue;
-    if(im.src === imgUrl(orig)) continue;      // 已是 blob，跳过（避免覆盖已设置的动态图）
+    if(im.src === imgUrl(orig)) continue;
     if(IMG_CACHE[orig]){ im.setAttribute('src', IMG_CACHE[orig]); }
   }
-  /* CSS 头像背景（微信对话框的 我与朋友头像） */
   var friends = document.querySelectorAll('.wx-avatar.friend');
   for(var j=0;j<friends.length;j++) friends[j].style.backgroundImage = 'url('+imgUrl('images/friend_avatar.jpg')+')';
   var mines = document.querySelectorAll('.wx-avatar.mine');
@@ -747,8 +969,8 @@ function bindStatic(){
 }
 
 /* =========================================================
-   图片数据：src + 是否 AI 生成（isAI）
-   全部图片中只有 images/real.jpg 是真实照片，其余为 AI 生成
+   数据：src + 是否 AI 生成
+   全部图片中只有 images/real.jpg 是真实照片
    ========================================================= */
 var IMGS = [
   { src:'images/ai1.jpg',   isAI:true },
@@ -760,20 +982,19 @@ var IMGS = [
   { src:'images/ai6.jpg',   isAI:true }
 ];
 
-/* 显示顺序：打乱，让“真实照片”不固定在最后 */
+/* 显示顺序：打乱，让真实照片不固定在最后 */
 var PLAY_ORDER = [0,1,4,5,2,6,3];
-// 下标 0,1,4,5,6,3 为 AI，下标 2 为真实
 
 /* =========================================================
    状态
    ========================================================= */
-var curIdx = 0;        // 图片题当前位置
-var imgMode = 1;       // 1 = 逐题判定；2 = 闯关计分
-var score = 0;         // 正确数
-var wrongIdx = [];     // 答错的下标
-var answered = [];     // 每个下标是否已答
-var newsIdx = 0;   // 新闻（仅一则，恒为0）
-var selEvi = [];       // 找证据已选项
+var curIdx = 0;
+var imgMode = 1;
+var score = 0;
+var wrongIdx = [];
+var answered = [];
+var NEWS_FINISHED = false;
+var WX_FINISHED = false;
 
 var screens = {};
 document.querySelectorAll('.screen').forEach(function(s){ screens[s.id]=s; });
@@ -781,33 +1002,47 @@ document.querySelectorAll('.screen').forEach(function(s){ screens[s.id]=s; });
 function go(id){
   Object.keys(screens).forEach(function(k){ screens[k].classList.remove('active'); });
   var s = screens['scr-'+id];
-  if(s){ s.classList.add('active'); s.scrollTop=0; }
+  if(s){ s.classList.add('active'); s.scrollTop = 0; }
   updateTopbar(id);
 }
 function updateTopbar(id){
-  var homeOnly = (id==='home');
-  document.getElementById('homeBtn').classList.toggle('hidden', homeOnly);
+  document.getElementById('homeBtn').classList.toggle('hidden', id==='home');
   var titles = {
-    home:'真假侦探', imgMenu:'图片判别 · 选择玩法', imgPlay:(imgMode===1?'模式一 · 逐题判定':'模式二 · 闯关计分'),
-    imgFinish1:'判定完成', imgScore:'闯关成绩', imgDetail:'图片详情',
-    newsMenu:'消息真假性判别', newsPage:'消息真假性判别', wxPage:'微信对话'
+    home:'真假侦探',
+    imgMenu:'图片判别 · 选择玩法',
+    imgPlay:(imgMode===1?'模式一 · 逐题判定':'模式二 · 闯关计分'),
+    imgFinish1:'归档回执',
+    imgScore:'闯关成绩',
+    imgDetail:'图片详情',
+    newsMenu:'消息真假性判别',
+    newsPage:'消息核查',
+    wxPage:'微信对话'
   };
   document.getElementById('topTitle').textContent = titles[id]||'真假侦探';
 }
 function goHome(){ go('home'); }
+
+/* 主界面证物卡：回车 / 空格等同点击 */
+document.querySelectorAll('.dossier').forEach(function(el){
+  el.addEventListener('keydown', function(e){
+    if(e.key==='Enter' || e.key===' '){ e.preventDefault(); el.click(); }
+  });
+});
 document.getElementById('homeBtn').addEventListener('click', goHome);
 
 /* =========================================================
    图片判别
    ========================================================= */
 function startImgMenu(){ go('imgMenu'); }
+
 function startImg(mode){
   imgMode = mode;
   curIdx = 0; score = 0; wrongIdx = []; answered = [];
-  for(var k in PLAY_ORDER) answered.push(false);
+  for(var i=0;i<PLAY_ORDER.length;i++) answered.push(false);
   go('imgPlay');
   renderImgQuestion();
 }
+
 function renderImgQuestion(){
   var gi = PLAY_ORDER[curIdx];
   var item = IMGS[gi];
@@ -816,18 +1051,17 @@ function renderImgQuestion(){
   document.getElementById('pTot').textContent = tot;
   document.getElementById('pBar').style.width = (curIdx/tot*100)+'%';
   document.getElementById('pImg').src = imgUrl(item.src);
-  document.getElementById('pNum').textContent = '图片 '+(curIdx+1);
+  document.getElementById('pNum').textContent = '证据 '+(curIdx+1);
   document.getElementById('pModeTag').textContent = (imgMode===1 ? '模式一 · 逐题判定' : '模式二 · 闯关计分');
-  document.getElementById('pBack').disabled = (curIdx===0); // 第一题不能返回
-  // 重置判定标签与推进按钮
+  document.getElementById('pBack').disabled = (curIdx===0);
   document.getElementById('pJudge').style.display = 'none';
   document.getElementById('pAskBtns').style.display = 'grid';
   document.getElementById('pNext').style.display = 'none';
 }
+
 document.getElementById('btnAI').addEventListener('click', function(){ answerImg(true); });
 document.getElementById('btnReal').addEventListener('click', function(){ answerImg(false); });
 
-/* 返回上一题（小箭头） */
 function backImgQ(){
   if(curIdx > 0){ curIdx--; renderImgQuestion(); }
 }
@@ -846,17 +1080,16 @@ function answerImg(pickedAI){
     else wrongIdx.push(curIdx);
   }
   if(imgMode===1){
-    // 不弹窗：只在图片右上角呈现判定结果，并出现“下一张”
+    /* 只在照片右上角盖章，并出现「下一份」 */
     var j = document.getElementById('pJudge');
     j.textContent = correct ? '判定正确' : '判定错误';
     j.className = 'judge-tag ' + (correct?'good':'bad');
     j.style.display = 'inline-block';
     document.getElementById('pAskBtns').style.display = 'none';
     var next = document.getElementById('pNext');
-    next.textContent = (curIdx===PLAY_ORDER.length-1) ? '完成判定 ✓' : '下一张 →';
+    next.textContent = (curIdx===PLAY_ORDER.length-1) ? '完成判定' : '下一份';
     next.style.display = 'block';
   } else {
-    // 闯关计分：直接下一题，最后结算
     if(curIdx < PLAY_ORDER.length-1){ curIdx++; renderImgQuestion(); }
     else { showScore(); }
   }
@@ -868,15 +1101,15 @@ function showScore(){
   var pct = Math.round(score/tot*100);
   document.getElementById('scoreCir').style.setProperty('--pct', pct+'%');
   document.getElementById('scoreNum').innerHTML = score + '<small>/'+tot+'</small>';
-  document.getElementById('scoreRate').textContent = '正确率 '+pct+'% · 共 '+tot+' 题';
+  document.getElementById('scoreRate').textContent = '正确率 '+pct+'% · 共 '+tot+' 份';
 
-  var verdict, like;
-  if(pct===100){ verdict='火眼金睛！全部答对 🎉'; like='🌟'; }
-  else if(pct>=70){ verdict='不错！你已经能识破大部分 AI 图片'; like='💪'; }
-  else if(pct>=40){ verdict='有一点感觉了，再多练练核查也能进步'; like='🤔'; }
-  else { verdict='AI 的迷惑性很强，学习“找证据”更重要'; like='🧐'; }
+  var verdict;
+  if(pct===100){ verdict='七份全中，一张都没看走眼。'; }
+  else if(pct>=70){ verdict='大部分看出来了，但还有几张骗过了你。'; }
+  else if(pct>=40){ verdict='有点感觉，但证据还没看全。'; }
+  else { verdict='AI 的迷惑性比想象中强，先学会找证据。'; }
   document.getElementById('scoreVerdict').textContent = verdict;
-  document.getElementById('scoreLike').textContent = like;
+  document.getElementById('perfectStamp').style.display = (pct===100 ? 'inline-block' : 'none');
 
   var wrap = document.getElementById('wrongListWrap');
   var grid = document.getElementById('wrongGrid');
@@ -894,7 +1127,7 @@ function showScore(){
       var item = IMGS[gi];
       var card = document.createElement('div');
       card.className='wrongcard';
-      card.innerHTML = '<img src="'+imgUrl(item.src)+'"><div class="cap">这张其实：'+(item.isAI?'AI 生成':'真实照片')+'</div><div class="gohint">点击查看 ›</div>';
+      card.innerHTML = '<img src="'+imgUrl(item.src)+'"><div class="cap">这张其实是：'+(item.isAI?'AI 生成':'真实照片')+'</div><div class="gohint">点开查看</div>';
       card.addEventListener('click', function(){ openDetail(item); });
       grid.appendChild(card);
     });
@@ -902,53 +1135,51 @@ function showScore(){
   go('imgScore');
 }
 
-/* 图片详情页（从模式二错图进入：仅显示正确答案 + 返回成绩） */
+/* 图片详情 */
 function openDetail(item){
   document.getElementById('dImg').src = imgUrl(item.src);
   document.getElementById('dNum').textContent = item.isAI?'AI 生成':'真实照片';
-  document.getElementById('dVerdict').textContent = '正确答案：'+(item.isAI?'🤖 AI 生成':'📷 真实照片');
+  document.getElementById('dVerdict').textContent = '正确答案：'+(item.isAI?'AI 生成':'真实照片');
   document.getElementById('dModeTag').textContent = '模式二 · 查看错图';
-  document.getElementById('dBackBtn').textContent = '← 返回成绩';
+  document.getElementById('dBackBtn').textContent = '返回成绩';
   document.getElementById('dBackBtn').onclick = function(){ go('imgScore'); };
   go('imgDetail');
 }
 
 /* =========================================================
-   新闻真假性判别（一则）
+   消息一 · 核查标注
    ========================================================= */
-function enterNews(){
-  go('newsMenu');
-}
+function enterNews(){ go('newsMenu'); }
+
 function goNewsPage(){
-  selEvi = [];
   NEWS_FINISHED = false;
   resetMarks();
   document.getElementById('judgeZone').style.display = 'block';
-  document.getElementById('evidZone').style.display = 'none';
-  document.getElementById('evidZone').innerHTML = '';
+  var zone = document.getElementById('evidZone');
+  zone.style.display = 'none';
+  zone.innerHTML = '';
   go('newsPage');
 }
 document.getElementById('nBelieve').addEventListener('click', function(){ judgeNews(true); });
 document.getElementById('nDoubt').addEventListener('click', function(){ judgeNews(false); });
 
 function judgeNews(pickedReal){
-  var correct = (pickedReal === false); // 该条消息为虚假
-  var verdict = (correct?'✅ 判断正确！':'❌ 判断错了，再核实一下')
-    + ' —— 这条消息是「虚假」的，请勿轻信转发。';
+  var correct = (pickedReal === false);   // 该条消息为虚假
+  var verdict = (correct?'判断正确。':'判断错了。') + '此消息存在虚假内容，不宜转发。';
   document.getElementById('judgeZone').style.display = 'none';
   var zone = document.getElementById('evidZone');
   zone.style.display = 'block';
-  zone.innerHTML = '<div class="eq fadein">'+verdict+'</div>'+
-    '<p style="font-size:14px;color:#6b7686;margin:0 0 12px;line-height:1.6;">现在进入核查模式：'+
-    '<b style="color:#c0392b;"></p>'+
+  zone.innerHTML =
+    '<div class="eq fadein">'+verdict+'</div>'+
+    '<p class="chk-intro"></p>'+
     '<div class="chk-tip"></div>'+
-    '<button class="btn primary block" onclick="revealAllMark()">点击此处，查看最终结论</button>'+
-    '<div class="btn secondary block" style="margin-top:10px;background:#eef1f5;color:#6b7686;" onclick="goHome()">🔙 返回主界面</div>';
-  selEvi = [];
+    '<div class="ev-btns">'+
+      '<button class="btn primary block" onclick="revealAllMark()">点击察看最终结论</button>'+
+      '<div class="btn secondary block" style="margin-top:10px" onclick="goHome()">回到办案台</div>'+
+    '</div>';
   enableMark();
 }
 
-/* 开启核查模式：给有疑点的元素挂上点击 */
 function enableMark(){
   var spots = markData();
   spots.forEach(function(s){
@@ -963,7 +1194,6 @@ function enableMark(){
   });
 }
 
-/* 清除上次留下的红线 / 红圈 / 提示条，供重玩 */
 function resetMarks(){
   var spots = markData();
   spots.forEach(function(s){
@@ -976,18 +1206,16 @@ function resetMarks(){
   var fin = document.getElementById('fnFinal'); if(fin) fin.remove();
 }
 
-/* 每条疑点的标注内容 */
 function markData(){
   return [
     {id:'fnTitle', order:1, anno:'重磅通知（诱导性标题，吸引人点击，需要保持警惕）'},
     {id:'p531',    order:2, anno:'具体执行细节，均无官方文件支撑，属于自媒体自行脑补的内容'},
-    {id:'p529',    order:3, anno:'自媒体“脑补”与考勤值日挂钩等细节，无官方文件或可靠信源可查'},
-    {id:'fnPressImg', order:4, img:true, anno:'▲ 配图误导：图片是无主题的通用素材，与消息无直接关联'},
+    {id:'p529',    order:3, anno:'把课间延长和教师考勤、值日轮岗挂钩——细节最易编造，混杂在真实信息中，真假难辨。'},
+    {id:'fnPressImg', order:4, img:true, anno:'配图误导：图片是无主题的通用素材，与消息无直接关联。'},
     {id:'fnQuote', order:5, anno:'“教育学者”为化名、身份无从查证，属典型“包装式”可信度暗示'}
   ];
 }
 
-/* 单点击某处 → 画红线/红圈 + 红色提示 */
 function revealMark(id){
   var meta = markData().find(function(m){ return m.id === id; });
   var el = document.getElementById(id);
@@ -1002,75 +1230,85 @@ function revealMark(id){
   tryCheckAllMarked();
 }
 
-/* 统计已核查数量，全部完成后自动弹出最终结论 */
 function tryCheckAllMarked(){
   var metas = markData(); var done = 0;
   metas.forEach(function(m){ var el=document.getElementById(m.id); if(el && el.getAttribute('data-done')==='1') done++; });
-  document.querySelector('.chk-tip')&&(document.querySelector('.chk-tip').textContent='✅ 已核查 '+done+' / '+metas.length+' 处');
-  if(done >= metas.length){ showFinalNews(); }
+  var tip = document.querySelector('#evidZone .chk-tip');
+  if(tip) tip.textContent = '已核查 '+done+' / '+metas.length+' 处';
+  if(done >= metas.length) showFinalNews();
 }
 
-/* 最终结论 */
-var NEWS_FINISHED = false;
 function showFinalNews(){
-  if(NEWS_FINISHED) return; NEWS_FINISHED = true;
+  if(NEWS_FINISHED) return;
+  NEWS_FINISHED = true;
   var zone = document.getElementById('evidZone');
   var fin = document.createElement('div');
-  fin.className = 'eq fadein';
+  fin.className = 'fadein';
   fin.id = 'fnFinal';
-  fin.style.fontSize='15px'; fin.style.lineHeight='1.8'; fin.style.textAlign='left';
-  fin.style.padding='16px 18px'; fin.style.background='#faf8f1'; fin.style.borderLeft='4px solid #c9a227'; fin.style.borderRadius='0 8px 8px 0';
   fin.innerHTML =
-    '<b style="color:#15202b;">最终核查结论</b><br>'+
-    '该新闻属于典型的 <b style="color:#c0392b;">“诱导标题 + 真假参半 + 细节脑补”</b> 的自媒体内容，'+
-    '核心内容符合政策趋势，但细节多为臆测、表述刻意博眼球，属于不严谨的网传消息，'+
-    '不能当作“官方正式通知”来相信和传播。相关政策的准确信息，请以教育部、当地教育局的官方发布为准。';
-  zone.insertBefore(fin, zone.firstChild);
+    '<div class="stamp-big">不可信</div>'+
+    '<div class="final-note">'+
+      '<b>最终核查结论</b><br>'+
+      '该新闻属于典型的 <b>“诱导标题 + 真假参半 + 细节脑补”</b>的自媒体内容，'+
+      '核心内容符合政策趋势，但细节多为臆测、表述刻意博眼球，属于不严谨的网传消息，'+
+      '不能当作“官方正式通知”来相信和传播。相关政策的准确信息，请以教育部、当地教育局的官方发布为准。'+
+    '</div>';
+  var btns = zone.querySelector('.ev-btns');
+  if(btns){
+    zone.insertBefore(fin, btns);
+    var jump = btns.querySelector('.btn.primary');
+    if(jump) jump.style.display = 'none';
+  } else zone.appendChild(fin);
 }
+
 function revealAllMark(){
   markData().forEach(function(m){
     var el=document.getElementById(m.id); if(el) revealMark(m.id);
   });
 }
 
-
-/* 消息二 · 模拟微信对话 */
+/* =========================================================
+   消息二 · 微信对话
+   ========================================================= */
 function openWxChat(){
   resetWxMarks();
   document.getElementById('wxAsk').style.display = 'block';
-  document.getElementById('wxResult').style.display = 'none';
-  document.getElementById('wxResult').innerHTML = '';
+  var r = document.getElementById('wxResult');
+  r.style.display = 'none';
+  r.innerHTML = '';
   go('wxPage');
 }
 function viewWxImg(el){
-  document.getElementById('wxViewerImg').src = el.src; // el.src 已是 blob 地址（见下方静态图替换）
+  document.getElementById('wxViewerImg').src = el.src;
   document.getElementById('wxViewer').style.display = 'flex';
 }
+
 function judgeWx2(choice){
   document.getElementById('wxAsk').style.display = 'none';
   var result = document.getElementById('wxResult');
   var verdict = (choice==='doubt')
-    ? '<div class="eq fadein"></div>'
-    : '<div class="eq fadein"></div>';
-  result.innerHTML = verdict+
-    '<p style="font-size:14px;color:#6b7686;margin:0 0 12px;line-height:1.6;"><b style="color:#c0392b;"></p>'+
+    ? '判断正确。这条消息是拼出来的。'
+    : '判断错误，它用了几个常见套路。';
+  result.innerHTML =
+    '<div class="eq fadein">'+verdict+'</div>'+
+    '<p></p>'+
     '<div class="chk-tip"></div>'+
-    '<button class="btn primary block" onclick="revealAllWxMark()">点击此处，查看总体结论</button>'+
-    '<div class="btn secondary block" style="margin-top:10px;background:#eef1f5;color:#6b7686;" onclick="goHome()">🔙 返回主界面</div>';
+    '<div class="ev-btns">'+
+      '<button class="btn primary block" onclick="revealAllWxMark()">察看最终结论</button>'+
+      '<div class="btn secondary block" style="margin-top:10px" onclick="goHome()">回到办案台</div>'+
+    '</div>';
   result.style.display = 'block';
   enableWxMark();
 }
 
-/* 微信核查：3 张图的疑点标注 */
 function wxMarkData(){
   return [
     {id:'wxImg1', anno:'核心关键信息无任何权威来源，全是民间二次加工。'},
-    {id:'wxImg2', anno:'消息传播里典型的“熟人佐证”式无证据说辞，需要警惕。'},
+    {id:'wxImg2', anno:'息传播里典型的“熟人佐证”式无证据说辞，需要警惕。'},
     {id:'wxImg3', anno:'移花接木——用官方新闻的真实部分强行佐证，误导性极强，营造出“官方认可完整消息”的错觉。'}
   ];
 }
 
-var WX_FINISHED = false;
 function enableWxMark(){
   wxMarkData().forEach(function(s){
     var el = document.getElementById(s.id);
@@ -1084,6 +1322,7 @@ function enableWxMark(){
     el.classList.add('wx-markable');
   });
 }
+
 function resetWxMarks(){
   wxMarkData().forEach(function(s){
     var el = document.getElementById(s.id);
@@ -1096,6 +1335,7 @@ function resetWxMarks(){
   var fin = document.getElementById('wxFinal'); if(fin) fin.remove();
   WX_FINISHED = false;
 }
+
 function revealWxMark(id){
   var meta = wxMarkData().find(function(m){ return m.id === id; });
   var el = document.getElementById(id);
@@ -1105,37 +1345,48 @@ function revealWxMark(id){
   anno.className = 'chk-anno';
   anno.id = id+'_anno';
   anno.textContent = meta.anno;
-  el.insertAdjacentElement('afterend', anno);
+  /* 聊天界面里标在图后面会被 flex 行挤成窄条，改挂到整行下方 */
+  var host = el.closest('.wx-row') || el;
+  host.insertAdjacentElement('afterend', anno);
   tryCheckAllWxMarked();
 }
+
 function tryCheckAllWxMarked(){
   var metas = wxMarkData(); var done = 0;
   metas.forEach(function(m){ var el=document.getElementById(m.id); if(el && el.getAttribute('data-wdone')==='1') done++; });
-  var tip = document.querySelector('#wxResult .chk-tip'); if(tip) tip.textContent='✅ 已核查 '+done+' / '+metas.length+' 张';
+  var tip = document.querySelector('#wxResult .chk-tip');
+  if(tip) tip.textContent = '已核查 '+done+' / '+metas.length+' 张';
   if(done >= metas.length) showFinalWx();
 }
+
 function showFinalWx(){
-  if(WX_FINISHED) return; WX_FINISHED = true;
+  if(WX_FINISHED) return;
+  WX_FINISHED = true;
   var result = document.getElementById('wxResult');
   var fin = document.createElement('div');
-  fin.className = 'eq fadein';
+  fin.className = 'fadein';
   fin.id = 'wxFinal';
-  fin.style.fontSize='15px'; fin.style.lineHeight='1.8'; fin.style.textAlign='left';
-  fin.style.padding='16px 18px'; fin.style.background='#faf8f1'; fin.style.borderLeft='4px solid #c9a227'; fin.style.borderRadius='0 8px 8px 0';
-  fin.style.margin='14px 0';
   fin.innerHTML =
-    '<b style="color:#15202b;">🔍 总体核查结论</b><br>'+
-    '这则消息本质是以 <b style="color:#c0392b;">“国外出现 AI 辅助的网络攻击事件”</b> 为基底，'+
-    '经过国内网友层层添油加醋、编段子、拼接真假消息、证据之后形成的不实传言。'+
-    '应当判定为 <b style="color:#c0392b;">不可信</b>，也不要转发传播。';
-  result.insertBefore(fin, result.firstChild.nextSibling);
-}
-function revealAllWxMark(){
-  wxMarkData().forEach(function(m){
-    var el = document.getElementById(m.id); if(el) revealWxMark(m.id);
-  });
+    '<div class="stamp-big">不可信</div>'+
+    '<div class="final-note">'+
+      '<b>总体核查结论</b><br>'+
+      '这则消息本质是以 <b>“国外出现 AI 辅助的真实网络攻击事件”</b> 为基底，经过层层添油加醋、'+
+      '编改、拼接真假素材之后形成的不实传言。'+
+      '判定为 <b>不可信</b>，也不要转发。'+
+    '</div>';
+  var wbtns = result.querySelector('.ev-btns');
+  if(wbtns){
+    result.insertBefore(fin, wbtns);
+    var wjump = wbtns.querySelector('.btn.primary');
+    if(wjump) wjump.style.display = 'none';
+  } else result.appendChild(fin);
 }
 
+function revealAllWxMark(){
+  wxMarkData().forEach(function(m){
+    var el=document.getElementById(m.id); if(el) revealWxMark(m.id);
+  });
+}
 </script>
 </body>
 </html>
